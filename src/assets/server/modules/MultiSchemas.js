@@ -8,7 +8,7 @@ const createEmpresaKnexConnection = (empresaId) => {
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
-      database: `empresa_${empresaId}` // Nome do banco da empresa específica
+      database: `${empresaId}` // Nome do banco da empresa específica
     }
   });
 };

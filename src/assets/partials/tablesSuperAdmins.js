@@ -10,7 +10,7 @@ const TableSuperAdmin = () => {
   useEffect(() => {
     const fetchDados = async () => {
       try {
-        const response = await axios.get('http://10.144.170.22:3001/tableSuperAdmins', { withCredentials: true });
+        const response = await axios.get('http://192.168.0.178:3001/tableSuperAdmins', { withCredentials: true });
         if (response.status === 200) {
           setInformacoes(response.data.DadosTabela);
         }

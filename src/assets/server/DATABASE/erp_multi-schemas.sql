@@ -6,6 +6,7 @@
           Nome VARCHAR(255) NOT NULL,
           Senha VARCHAR(255),
           TypeUser VARCHAR(50),
+          email varchar(255) NOT NULL,
           DataInserimento DATETIME DEFAULT CURRENT_TIMESTAMP,
           Empresa INT(11) DEFAULT '${id}'
         );

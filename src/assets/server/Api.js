@@ -13,7 +13,6 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path')
-const fs = require('fs');
 
 const app = express();
 
@@ -38,11 +37,11 @@ app.post('/login', async (req, res) => {
   const { Nome, Senha } = req.body; // Obtendo id, Nome e Senha do corpo da requisição.
 
   try {
-    // Busca usuário/SuperAdministrador pelo ID e Nome no Database* principal
+    // Busca usuário/SuperAdministrador pelo Nome no banco principal
     const user = await mainDb('admin_users').where({ Nome }).first();
 
     if (user) {
-      // Verifica a senha criptografada* do usuário com o bcrypt.
+      // Verifica a senha criptografada do usuário com o bcrypt.
       const isPasswordValid = await bcrypt.compare(Senha, user.Senha);
       if (isPasswordValid) {
         // Gera o token JWT se a senha for válida.
@@ -60,11 +59,11 @@ app.post('/login', async (req, res) => {
         res.status(401).send('Credenciais inválidas'); // Senha inválida.
       }
     } else {
-      // Busca empresa pelo ID e Nome no * principal
+      // Busca empresa pelo Nome no banco principal
       const empresa = await mainDb('cadastro_empresarial').where({ Gestor: Nome }).first();
 
       if (empresa) {
-        // Verifica a senha * da empresa com bcrypt.
+        // Verifica a senha da empresa com bcrypt.
         const isPasswordValid2 = await bcrypt.compare(Senha, empresa.Senha);
         if (isPasswordValid2) {
           if (empresa.Autorizado === "NO") {
@@ -72,7 +71,7 @@ app.post('/login', async (req, res) => {
           } else {
             // Gera o token JWT se a senha for válida.
             const token = jwt.sign(
-              { ID_Empresa: empresa.id, Gestor: empresa.Gestor, Empresa: empresa.Empresa, Logo: empresa.Logo, Email: empresa.email },
+              { id_user: empresa.id, Nome_user: empresa.Gestor, Empresa: empresa.Empresa, Logo: empresa.Logo, Email: empresa.email },
               process.env.JWT_SECRET,
               { expiresIn: '1h' } // Token expira em 1 hora.
             );
@@ -81,9 +80,8 @@ app.post('/login', async (req, res) => {
             // Registra log de login bem-sucedido
             await logAction(empresa.id, empresa.Gestor, 'Login', 'cadastro_empresarial');
             // Conectar ao banco de dados da empresa específica.
-            const empresaDb = createEmpresaKnexConnection(empresa.id);
+            const empresaDb = createEmpresaKnexConnection(`empresa_${empresa.id}`);
             req.empresaDb = empresaDb;
-
             res.status(200).send({ token }); // Envia o token para o front-end
           }
         } else {
@@ -91,27 +89,28 @@ app.post('/login', async (req, res) => {
         }
       } else {
         // Caso não seja administrador nem empresa, verificar em todas as empresas para funcionários.
-        const empresas = await mainDb('cadastro_empresarial').select('id'); // Seleciona todos os id da tabela do * principal
+        const empresas = await mainDb('cadastro_empresarial').select('id'); // Seleciona todos os id da tabela do banco principal
         let funcionario;
         let empresaId;
 
         for (const empresa of empresas) {
           const databaseName = `empresa_${empresa.id}`;
+          console.log(databaseName);
 
           // Verifica se o banco de dados da empresa está ativo e existe
           const databaseExists = await checkIfDatabaseExists(databaseName);
 
           if (!databaseExists) {
-            res.status(403).send('Empresa não autorizada');
-            return;
+            continue; // Continue para o próximo banco de dados se o atual não existir
           }
 
-          const tableName = `${databaseName}.Funcionario`;
-          funcionario = await mainDb(tableName).where({ Nome }).first();
+          const empresaDb = createEmpresaKnexConnection(databaseName);
+          const tableName = 'Funcionario'; // Nome da tabela no banco da empresa
+          funcionario = await empresaDb(tableName).where({ Nome }).first();
 
           if (funcionario) {
             empresaId = empresa.id;
-            break;
+            break; // Sai do loop se o funcionário for encontrado
           }
         }
 
@@ -121,12 +120,12 @@ app.post('/login', async (req, res) => {
           if (isPasswordValid) {
             // Gera o token JWT se a senha for válida.
             const token = jwt.sign(
-              { id_user: funcionario.id, id_EmpresaDb: funcionario.Empresa, Nome_user: funcionario.Nome, TypeUser: funcionario.TypeUser, isUser: true },
+              { id_user: funcionario.id, id_EmpresaDb: funcionario.Empresa, Nome_user: funcionario.Nome, Email: funcionario.email, TypeUser: funcionario.TypeUser, isUser: true },
               process.env.JWT_SECRET,
               { expiresIn: '1h' } // Token expira em 1 hora.
             );
             // Registra log de login bem-sucedido
-            await logAction(funcionario.id, funcionario.Nome, 'Login', `Funcionario => empresa_${funcionario.Empresa}`);
+            await logAction(funcionario.id, funcionario.Nome, 'Login', `Funcionario => empresa_${empresaId}.Funcionario`);
             // Configura o cookie com o token JWT.
             res.cookie('jwt_token', token, { httpOnly: true, secure: false });
             res.status(200).send({ token }); // Envia o token para o front-end
@@ -143,6 +142,7 @@ app.post('/login', async (req, res) => {
     res.status(500).send("Não foi possível fazer a requisição");
   }
 });
+
 
 
 // Registro de empresas
@@ -240,14 +240,35 @@ app.get('/email_suggestions', async (req, res) => {
   const { query } = req.query;
 
   try {
-      // Execute both queries simultaneously
+      // Execute both queries simultaneamente no banco principal
       const [adminUsers, cadastroEmpresarial] = await Promise.all([
           mainDb('admin_users').where('email', 'like', `%${query}%`).select('email').limit(5),
           mainDb('cadastro_empresarial').where('email', 'like', `%${query}%`).select('email').limit(5)
       ]);
 
-      // Combine and deduplicate the results
-      const suggestions = [...adminUsers, ...cadastroEmpresarial];
+      // Combine resultados do banco principal
+      let suggestions = [...adminUsers, ...cadastroEmpresarial];
+
+      // Buscar todos os IDs das empresas cadastradas e seus status de autorização
+      const empresas = await mainDb('cadastro_empresarial').select('id', 'Autorizado');
+
+      // Função para obter e-mails de funcionários de um banco de dados específico da empresa
+      const getEmployeeEmails = async (id, autorizado) => {
+          const databaseName = autorizado === "NO" ? `inactive_empresa_${id}` : `empresa_${id}`;
+          const empresaDb = createEmpresaKnexConnection(databaseName); // Cria uma conexão dinâmica
+          return await empresaDb('Funcionario').where('email', 'like', `%${query}%`).select('email').limit(5);
+      };
+
+      // Buscar e-mails de funcionários de todas as empresas em paralelo
+      const employeeEmailPromises = empresas.map(({ id, Autorizado }) => getEmployeeEmails(id, Autorizado));
+      const employeeEmailsArray = await Promise.all(employeeEmailPromises);
+
+      // Combine os resultados dos e-mails dos funcionários
+      employeeEmailsArray.forEach(employeeEmails => {
+          suggestions = [...suggestions, ...employeeEmails];
+      });
+
+      // Remover duplicatas da lista final de e-mails
       const uniqueEmails = [...new Set(suggestions.map(suggestion => suggestion.email))];
 
       res.status(200).json(uniqueEmails);
@@ -256,6 +277,8 @@ app.get('/email_suggestions', async (req, res) => {
       res.status(500).send('Erro no servidor');
   }
 });
+
+
 
 // Informações das empresas
 app.get('/SelectInfoEmpresa/:id', async (req, res) => {
@@ -345,7 +368,7 @@ app.get(`/tableEstoque/:id`, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
   try {
-    const knexInstance = createEmpresaKnexConnection(id);
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
     const estoqueInfo = await knexInstance('Estoque').select('*');
     res.status(200).send({ InfoTabela: estoqueInfo });
   } catch (error) {
@@ -358,7 +381,7 @@ app.get('/tableFuncionario/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
-    const knexInstance = createEmpresaKnexConnection(id);
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
     const funcionarioInfo = await knexInstance('Funcionario').select('*');
     res.status(200).send({ InfoTabela: funcionarioInfo });
   } catch (error) {
@@ -377,7 +400,7 @@ app.get('/autorizar/:id', async (req, res) => {
 
   try {
     // Atualiza o registro da empresa para autorizado
-    const updatedRegister = await mainDb('cadastro_empresarial').where({ id: parseInt(id) }).update({ Autorizado: 'YES' });
+    await mainDb('cadastro_empresarial').where({ id: parseInt(id) }).update({ Autorizado: 'YES' });
 
     const dbName = `empresa_${id}`;
     const inactiveDbName = `inactive_empresa_${id}`;
@@ -404,6 +427,7 @@ app.get('/autorizar/:id', async (req, res) => {
           Nome VARCHAR(255) NOT NULL,
           Senha VARCHAR(255),
           TypeUser VARCHAR(50),
+          email varchar(255) NOT NULL,
           DataInserimento DATETIME DEFAULT CURRENT_TIMESTAMP,
           Empresa INT(11) DEFAULT '${id}'
         );
@@ -499,7 +523,7 @@ app.get('/desautorizar/:id', async (req, res) => {
 
   try {
     // Atualiza o registro da empresa para não autorizado
-    const updatedRegister = await mainDb('cadastro_empresarial').where({ id: parseInt(id) }).update({ Autorizado: 'NO' });
+    await mainDb('cadastro_empresarial').where({ id: parseInt(id) }).update({ Autorizado: 'NO' });
 
     const dbName = `empresa_${id}`;
     const inactiveDbName = `inactive_empresa_${id}`;

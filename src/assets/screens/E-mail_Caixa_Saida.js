@@ -40,7 +40,7 @@ const Caixa_Saida = () => {
     useEffect(() => {
         const fetchData = async () => {
                 try {
-                    const response = await axios.get(`http://10.144.170.22:3001/caixa_saida`, {withCredentials: true});
+                    const response = await axios.get(`http://192.168.0.178:3001/caixa_saida`, {withCredentials: true});
                         setEmails(response.data);
                 } catch (err) {
                     setProtocoloErro("500");

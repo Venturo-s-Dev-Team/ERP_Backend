@@ -4,31 +4,33 @@ import '../styles/email.css'; // Estilos personalizados
 
 const EmailPopup = ({ onClose, Email }) => {
     const [to, setTo] = useState('');
+    const [suggestions, setSuggestions] = useState([]);
     const [subject, setSubject] = useState('');
     const [message, setMessage] = useState('');
-    const [suggestions, setSuggestions] = useState([]);
-    const [showSuggestions, setShowSuggestions] = useState(false);
 
-    const fetchEmailSuggestions = async (query) => {
-        if (query.length > 1) {
-            try {
-                const response = await axios.get(`http://10.144.170.22:3001/email_suggestions`, {
-                    params: { query }
-                });
-                setSuggestions(response.data);
-                setShowSuggestions(true);
-            } catch (err) {
-                console.error('Erro ao buscar sugestões de e-mail', err);
+    useEffect(() => {
+        const fetchSuggestions = async () => {
+            if (to.length > 1) { // Buscar sugestões apenas se houver mais de 1 caractere
+                try {
+                    const response = await axios.get('http://192.168.0.178:3001/email_suggestions', {
+                        params: { query: to },
+                        withCredentials: true
+                    });
+                    setSuggestions(response.data);
+                } catch (err) {
+                    console.error('Erro ao buscar sugestões de e-mail:', err);
+                }
+            } else {
+                setSuggestions([]);
             }
-        } else {
-            setSuggestions([]);
-            setShowSuggestions(false);
-        }
-    };
+        };
+
+        fetchSuggestions();
+    }, [to]);
 
     const sendEmail = async () => {
         try {
-            await axios.post('http://10.144.170.22:3001/email', {
+            await axios.post('http://192.168.0.178:3001/email', {
                 Remetente: Email,
                 Destinatario: to,
                 Assunto: subject,
@@ -38,17 +40,6 @@ const EmailPopup = ({ onClose, Email }) => {
         } catch (err) {
             alert('Erro ao enviar e-mail');
         }
-    };
-
-    const handleToChange = (e) => {
-        const value = e.target.value;
-        setTo(value);
-        fetchEmailSuggestions(value);
-    };
-
-    const handleSuggestionClick = (suggestion) => {
-        setTo(suggestion);
-        setShowSuggestions(false);
     };
 
     return (
@@ -63,12 +54,12 @@ const EmailPopup = ({ onClose, Email }) => {
                         type="text"
                         placeholder="Para"
                         value={to}
-                        onChange={handleToChange}
+                        onChange={(e) => setTo(e.target.value)}
                     />
-                    {showSuggestions && (
+                    {suggestions.length > 0 && (
                         <ul className="suggestions-list">
                             {suggestions.map((suggestion, index) => (
-                                <li key={index} onClick={() => handleSuggestionClick(suggestion)}>
+                                <li key={index} onClick={() => setTo(suggestion)}>
                                     {suggestion}
                                 </li>
                             ))}

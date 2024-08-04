@@ -39,7 +39,7 @@ const Dashboard = () => {
 
   const jwtTokenEnd = async () => {
     try {
-      await axios.get('http://10.144.170.22:3001/logout', { withCredentials: true });
+      await axios.get('http://192.168.0.178:3001/logout', { withCredentials: true });
     } catch (err) {
       alert("Erro ao finalizar o token JWT: ", err);
     }
@@ -69,6 +69,7 @@ const Dashboard = () => {
           <div>
             <p>ID: {userInfo.id_user}</p>
             <p>Nome: {userInfo.Nome_user}</p>
+            <p>Email: {userInfo.Email}</p>
             <TableSuperAdmin />
             <TableEmpresas />
           </div>
@@ -78,21 +79,22 @@ const Dashboard = () => {
           <div>
             <p>ID: {userInfo.id_user}</p>
             <p>Nome: {userInfo.Nome_user}</p>
+            <p>Email: {userInfo.Email}</p>
             <p>{userInfo.TypeUser}</p>
             <TableEstoque id_user={userInfo.id_EmpresaDb} />
             <TableFuncionario id_user={userInfo.id_EmpresaDb} />
           </div>
         );
-      } else if (userInfo.Gestor) {
+      } else if (userInfo.Empresa) {
         return (
           <div>
-            <p>ID: {userInfo.ID_Empresa}</p>
-            <p>Gestor: {userInfo.Gestor}</p>
+            <p>ID: {userInfo.id_user}</p>
+            <p>Nome_user: {userInfo.Nome_user}</p>
             <p>Empresa: {userInfo.Empresa}</p>
-            <img src={`http://10.144.170.22:3001/uploads/Logo/${userInfo.Logo}`} alt="Logo" />
+            <img src={`http://192.168.0.178:3001/uploads/Logo/${userInfo.Logo}`} alt="Logo" />
             <p>E-mail: {userInfo.Email}</p>
-            <TableEstoque id_user={userInfo.ID_Empresa} />
-            <TableFuncionario id_user={userInfo.ID_Empresa} />
+            <TableEstoque id_user={userInfo.id_user} />
+            <TableFuncionario id_user={userInfo.id_user} />
           </div>
         );
       }
@@ -105,7 +107,6 @@ const Dashboard = () => {
     <div className={`app ${DarkMode ? 'dark' : 'light'} `} style={{ fontSize: `${fontSize}px` }}>
       <h1>Dashboard</h1>
       <Body />
-
       <button className='btn btn-warning' onClick={AlternarTema}>
         Alternar para {DarkMode ? 'Tema Claro' : 'Tema Escuro'}
       </button>
