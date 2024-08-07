@@ -7,12 +7,13 @@ const EmailPopup = ({ onClose, Email }) => {
     const [suggestions, setSuggestions] = useState([]);
     const [subject, setSubject] = useState('');
     const [message, setMessage] = useState('');
+    const [file, setFile] = useState(null); // Adicionado para o arquivo
 
     useEffect(() => {
         const fetchSuggestions = async () => {
             if (to.length > 1) { // Buscar sugestões apenas se houver mais de 1 caractere
                 try {
-                    const response = await axios.get('http://192.168.0.178:3001/email_suggestions', {
+                    const response = await axios.get('http://10.144.165.26:3001/email_suggestions', {
                         params: { query: to },
                         withCredentials: true
                     });
@@ -28,14 +29,27 @@ const EmailPopup = ({ onClose, Email }) => {
         fetchSuggestions();
     }, [to]);
 
+    const handleFileChange = (e) => {
+        setFile(e.target.files[0]); // Atualiza o estado com o arquivo selecionado
+    };
+
     const sendEmail = async () => {
+        const formData = new FormData();
+        formData.append('Remetente', Email);
+        formData.append('Destinatario', to);
+        formData.append('Assunto', subject);
+        formData.append('Mensagem', message);
+        if (file) {
+            formData.append('anexo', file); // Adiciona o arquivo ao FormData
+        }
+
         try {
-            await axios.post('http://192.168.0.178:3001/email', {
-                Remetente: Email,
-                Destinatario: to,
-                Assunto: subject,
-                Mensagem: message
-            }, { withCredentials: true });
+            await axios.post('http://10.144.165.26:3001/email', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data' // Define o cabeçalho para multipart/form-data
+                },
+                withCredentials: true
+            });
             onClose(); // Fechar a popup após o envio
         } catch (err) {
             alert('Erro ao enviar e-mail');
@@ -75,6 +89,10 @@ const EmailPopup = ({ onClose, Email }) => {
                         placeholder="Mensagem"
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
+                    />
+                    <input
+                        type="file"
+                        onChange={handleFileChange}
                     />
                 </div>
                 <div className="popup-footer">

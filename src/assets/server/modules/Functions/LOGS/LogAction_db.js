@@ -1,4 +1,4 @@
-const { mainDb } = require('./knexfile'); // Configurações do Knex 
+const { mainDb } = require('../../KnexJS/knexfile'); // Configurações do Knex 
 const logAction = async (userId, userName, action, tableName) => {
     try {
       await mainDb('historico_logs').insert({

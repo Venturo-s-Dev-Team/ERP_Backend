@@ -1,4 +1,4 @@
-const { mainDb } = require('./knexfile');
+const { mainDb } = require('../../KnexJS/knexfile');
 
 const checkIfDatabaseExists = async (databaseName) => {
     try {

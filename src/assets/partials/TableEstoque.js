@@ -10,7 +10,7 @@ const TableEstoque = (props) => {
   useEffect(() => {
     const fetchDados = async () => {
       try {
-        const response = await axios.get(`http://192.168.0.178:3001/tableEstoque/${props.id_user}`, { withCredentials: true });
+        const response = await axios.get(`http://10.144.165.26:3001/tableEstoque/${props.id_user}`, { withCredentials: true });
         if (response.status === 200) {
           setInformacoes(response.data.InfoTabela);
         }

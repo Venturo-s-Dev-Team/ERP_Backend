@@ -12,7 +12,7 @@ const TableEmpresas = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const Info = await axios.get('http://192.168.0.178:3001/tableEmpresas', { withCredentials: true });
+        const Info = await axios.get('http://10.144.165.26:3001/tableEmpresas', { withCredentials: true });
         if (Info.status === 200) {
           setData(Info.data.InfoTabela);
         }
@@ -27,8 +27,8 @@ const TableEmpresas = () => {
 
   const Desautorizado = async (id) => {
     try {
-      const response = await axios.get(`http://192.168.0.178:3001/desautorizar/${id}`, { withCredentials: true });
-      if (response) { 
+      const response = await axios.get(`http://10.144.165.26:3001/desautorizar/${id}`, { withCredentials: true });
+      if (response) {
         alert("Empresa desautorizada. A página será recarregada.");
         window.location.reload(); // Recarrega a página
       }
@@ -41,8 +41,8 @@ const TableEmpresas = () => {
 
   const Autorizado = async (id) => {
     try {
-      const response = await axios.get(`http://192.168.0.178:3001/autorizar/${id}`, { withCredentials: true });
-      if (response) { 
+      const response = await axios.get(`http://10.144.165.26:3001/autorizar/${id}`, { withCredentials: true });
+      if (response) {
         alert("Empresa autorizada. A página será recarregada.");
         window.location.reload(); // Recarrega a página
       }
@@ -55,7 +55,7 @@ const TableEmpresas = () => {
 
   const EmpresaInfo = async (id) => {
     try {
-      const response = await axios.get(`http://192.168.0.178:3001/SelectInfoEmpresa/${id}`, { withCredentials: true });
+      const response = await axios.get(`http://10.144.165.26:3001/SelectInfoEmpresa/${id}`, { withCredentials: true });
       if (response && response.data && response.data.InfoEmpresa) {
         const Info = response.data.InfoEmpresa;
         console.log('InfoEmpresa from API:', Info);
@@ -69,12 +69,14 @@ const TableEmpresas = () => {
       console.log(error);
     }
   };
-  
+
 
   if (protocoloErro) {
     return <Error protocolo={protocoloErro} msg={msgErro} />;
   }
 
+  console.log(Data.Logo)
+  
   return (
     <div>
       <main>
@@ -93,7 +95,7 @@ const TableEmpresas = () => {
                     <th>Gestor</th>
                     <th>Empresa</th>
                     <th>Endereço</th>
-                    <th style={{width: 100, height: 100}} >Logo</th>
+                    <th>Logo</th>
                     <th>Autorizado</th>
                     <th>Database (Veja info.)</th>
                   </tr>
@@ -105,7 +107,7 @@ const TableEmpresas = () => {
                     <th>Gestor</th>
                     <th>Empresa</th>
                     <th>Endereço</th>
-                    <th style={{width: 100, height: 100}} >Logo</th>
+                    <th>Logo</th>
                     <th>Autorizado</th>
                     <th>Database (Veja info.)</th>
                   </tr>
@@ -119,7 +121,12 @@ const TableEmpresas = () => {
                         <td>{item.Gestor}</td>
                         <td>{item.Empresa}</td>
                         <td>{item.email}</td>
-                        <td><img src={`http://192.168.0.178:3001/uploads/Logo/${item.Logo}`} style={{ width: 100, height: 100 }} alt="Logo" /></td>
+                        <td>{!item.Logo ? (
+                        <div>Vazio</div>
+                        ) : (
+                        <img src={`http://10.144.165.26:3001/uploads/Logo/${item.Logo}`} style={{ width: 100, height: 100 }} alt="" />
+                        )}
+                        </td>
                         <td>
                           {item.Autorizado === "YES" ? (
                             <button className="btn btn-danger" onClick={() => Desautorizado(item.id)} type="button">Desautorizar</button>
@@ -130,7 +137,7 @@ const TableEmpresas = () => {
                         <td>
                           {item.Autorizado === "YES" ? (
                             <button className='btn btn-info' onClick={() => EmpresaInfo(item.id)} >empresa_{item.id}</button>
-                          ):(
+                          ) : (
                             <div>Acess Denied (500)</div>
                           )}
                         </td>

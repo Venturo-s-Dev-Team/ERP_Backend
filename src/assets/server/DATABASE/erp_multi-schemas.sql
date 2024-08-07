@@ -77,4 +77,13 @@
           ValorUnitario DECIMAL(15, 2) NOT NULL,
           Estoque INT NOT NULL
         );
+
+        CREATE TABLE `historico_logs` (
+         id INT PRIMARY KEY AUTO_INCREMENT,
+         user_id int(11) NOT NULL,
+         user_name varchar(255) NOT NULL,
+         action varchar(255) NOT NULL,
+         table_name varchar(255) NOT NULL,
+         timestamp datetime DEFAULT current_timestamp()
+        );
       ;

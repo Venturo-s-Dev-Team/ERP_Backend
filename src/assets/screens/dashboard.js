@@ -39,7 +39,7 @@ const Dashboard = () => {
 
   const jwtTokenEnd = async () => {
     try {
-      await axios.get('http://192.168.0.178:3001/logout', { withCredentials: true });
+      await axios.get('http://10.144.165.26:3001/logout', { withCredentials: true });
     } catch (err) {
       alert("Erro ao finalizar o token JWT: ", err);
     }
@@ -77,10 +77,21 @@ const Dashboard = () => {
       } else if (userInfo.TypeUser === 'Admin') {
         return (
           <div>
-            <p>ID: {userInfo.id_user}</p>
-            <p>Nome: {userInfo.Nome_user}</p>
-            <p>Email: {userInfo.Email}</p>
-            <p>{userInfo.TypeUser}</p>
+            <footer>
+              <details>
+                <summary>
+                  {!userInfo.id_EmpresaDb ? (
+                    <div>Vazio</div>
+                  ) : (
+                    <img src={`http://10.144.165.26:3001/uploads/Logo/${userInfo.id_EmpresaDb}.png`} style={{ width: 100, height: 100 }} alt="" />
+                  )}
+                </summary>
+                <p>ID: {userInfo.id_user}</p>
+                <p>Nome: {userInfo.Nome_user}</p>
+                <p>Email: {userInfo.Email}</p>
+                <p>{userInfo.TypeUser}</p>
+              </details>
+            </footer>
             <TableEstoque id_user={userInfo.id_EmpresaDb} />
             <TableFuncionario id_user={userInfo.id_EmpresaDb} />
           </div>
@@ -88,11 +99,21 @@ const Dashboard = () => {
       } else if (userInfo.Empresa) {
         return (
           <div>
-            <p>ID: {userInfo.id_user}</p>
-            <p>Nome_user: {userInfo.Nome_user}</p>
-            <p>Empresa: {userInfo.Empresa}</p>
-            <img src={`http://192.168.0.178:3001/uploads/Logo/${userInfo.Logo}`} alt="Logo" />
-            <p>E-mail: {userInfo.Email}</p>
+            <footer>
+              <details>
+                <summary>
+                  {!userInfo.Logo ? (
+                    <div>Perfil</div>
+                  ) : (
+                    <img src={`http://10.144.165.26:3001/uploads/Logo/${userInfo.Logo}`} style={{ width: 100, height: 100, }} alt="" />
+                  )}
+                </summary>
+                <p>ID: {userInfo.id_user}</p>
+                <p>Nome_user: {userInfo.Nome_user}</p>
+                <p>Empresa: {userInfo.Empresa}</p>
+                <p>E-mail: {userInfo.Email}</p>
+              </details>
+            </footer>
             <TableEstoque id_user={userInfo.id_user} />
             <TableFuncionario id_user={userInfo.id_user} />
           </div>

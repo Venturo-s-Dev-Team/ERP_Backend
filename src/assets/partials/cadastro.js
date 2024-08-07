@@ -1,115 +1,111 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import '../styles/email.css'; // Estilos personalizados
 
-const Cadastro = () => {
-  const [gestor, setGestor] = useState('');
-  const [cnpj, setCnpj] = useState('');
-  const [empresa, setEmpresa] = useState('');
-  const [senha, setSenha] = useState('');
-  const [logo, setLogo] = useState(null);
-  const [erro, setErro] = useState(null);
+const EmailPopup = ({ onClose, Email }) => {
+    const [to, setTo] = useState('');
+    const [suggestions, setSuggestions] = useState([]);
+    const [subject, setSubject] = useState('');
+    const [message, setMessage] = useState('');
+    const [file, setFile] = useState(null); // Adicionado para o arquivo
 
-  const navigate = useNavigate();
+    // Função para buscar sugestões de e-mail conforme o texto do campo 'Para'
+    useEffect(() => {
+        const fetchSuggestions = async () => {
+            if (to.length > 1) { // Buscar sugestões apenas se houver mais de 1 caractere
+                try {
+                    const response = await axios.get('http://10.144.165.26:3001/email_suggestions', {
+                        params: { query: to },
+                        withCredentials: true
+                    });
+                    setSuggestions(response.data);
+                } catch (err) {
+                    console.error('Erro ao buscar sugestões de e-mail:', err);
+                }
+            } else {
+                setSuggestions([]);
+            }
+        };
 
-  const formatCNPJ = (value) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{2})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1/$2')
-      .replace(/(\d{4})(\d)/, '$1-$2')
-      .replace(/(-\d{2})\d+?$/, '$1');
-  };
+        fetchSuggestions();
+    }, [to]);
 
-  const generateEmail = (name) => {
-    return name.toLowerCase().replace(/\s+/g, '.') + '@venturo.com';
-  };
+    // Função para lidar com a mudança no input de arquivo
+    const handleFileChange = (e) => {
+        setFile(e.target.files[0]); // Atualiza o estado com o arquivo selecionado
+    };
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    const email = generateEmail(gestor);
+    // Função para enviar o e-mail
+    const sendEmail = async () => {
+        const formData = new FormData();
+        formData.append('Remetente', Email);
+        formData.append('Destinatario', to);
+        formData.append('Assunto', subject);
+        formData.append('Mensagem', message);
+        if (file) {
+            formData.append('anexo', file); // Adiciona o arquivo ao FormData
+        }
 
-    const formData = new FormData();
-    formData.append('gestor', gestor);
-    formData.append('email', email);
-    formData.append('cnpj', cnpj);
-    formData.append('empresa', empresa);
-    formData.append('senha', senha);
-    formData.append('logo', logo);
+        try {
+            await axios.post('http://10.144.165.26:3001/email', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data' // Define o cabeçalho para multipart/form-data
+                },
+                withCredentials: true
+            });
+            onClose(); // Fechar a popup após o envio
+        } catch (err) {
+            alert('Erro ao enviar e-mail');
+            console.error('Erro ao enviar e-mail:', err);
+        }
+    };
 
-    try {
-      const response = await axios.post('http://192.168.0.178:3001/registro', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
-        withCredentials: true
-      });
-      if (response.status === 200) {
-        navigate('/');
-        alert("Cadastro Realizado");
-      }
-    } catch (error) {
-      if (error.response && error.response.status === 409) {
-        alert("Estes dados já constam no sistema, insira dados válidos para a validação");
-      } else {
-        setErro("Não foi possível fazer o registro");
-      }
-    }
-  };
-
-  const handleCnpjChange = (e) => {
-    setCnpj(formatCNPJ(e.target.value));
-  };
-
-  return (
-    <div className='Cadastro'>
-      <h1>Cadastro</h1>
-      <form onSubmit={handleRegister}>
-        <h3>Faça Cadastro</h3>
-        <input
-          value={gestor}
-          onChange={(e) => setGestor(e.target.value)}
-          type="text"
-          placeholder="Nome"
-          name="gestor"
-          required
-        />
-        <input
-          value={cnpj}
-          onChange={handleCnpjChange}
-          type="text"
-          placeholder="CNPJ"
-          name="cnpj"
-          required
-        />
-        <input
-          value={empresa}
-          onChange={(e) => setEmpresa(e.target.value)}
-          type="text"
-          placeholder="Nome da empresa"
-          name="empresa"
-          required
-        />
-        <input
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-          type="password"
-          placeholder="Senha"
-          name="senha"
-          required
-        />
-        <input
-          onChange={(e) => setLogo(e.target.files[0])}
-          type="file"
-          placeholder="Logo (opcional)"
-          name="logo"
-        />
-        <div>{erro}</div>
-        <button className='btn btn-dark' type="submit">Cadastro</button>
-      </form>
-    </div>
-  );
+    return (
+        <div className="popup-overlay">
+            <div className="popup-container">
+                <div className="popup-header">
+                    <h3>Nova Mensagem</h3>
+                    <span className="popup-close" onClick={onClose}>&times;</span>
+                </div>
+                <div className="popup-body">
+                    <input
+                        type="text"
+                        placeholder="Para"
+                        value={to}
+                        onChange={(e) => setTo(e.target.value)}
+                    />
+                    {suggestions.length > 0 && (
+                        <ul className="suggestions-list">
+                            {suggestions.map((suggestion, index) => (
+                                <li key={index} onClick={() => setTo(suggestion)}>
+                                    {suggestion}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                    <input
+                        type="text"
+                        placeholder="Assunto"
+                        value={subject}
+                        onChange={(e) => setSubject(e.target.value)}
+                    />
+                    <textarea
+                        placeholder="Mensagem"
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                    />
+                    <input
+                        type="file"
+                        onChange={handleFileChange}
+                    />
+                </div>
+                <div className="popup-footer">
+                    <button onClick={onClose}>Cancelar</button>
+                    <button onClick={sendEmail}>Enviar</button>
+                </div>
+            </div>
+        </div>
+    );
 };
 
-export default Cadastro;
+export default EmailPopup;
