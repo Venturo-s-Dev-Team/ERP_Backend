@@ -8,12 +8,13 @@ const EmailPopup = ({ onClose, Email }) => {
     const [subject, setSubject] = useState('');
     const [message, setMessage] = useState('');
     const [file, setFile] = useState(null); // Adicionado para o arquivo
+    const [error, setError] = useState('');
 
     useEffect(() => {
         const fetchSuggestions = async () => {
             if (to.length > 1) { // Buscar sugestões apenas se houver mais de 1 caractere
                 try {
-                    const response = await axios.get('http://10.144.165.26:3001/email_suggestions', {
+                    const response = await axios.get('http://192.168.0.177:3001/email_suggestions', {
                         params: { query: to },
                         withCredentials: true
                     });
@@ -34,6 +35,11 @@ const EmailPopup = ({ onClose, Email }) => {
     };
 
     const sendEmail = async () => {
+        if (!to || !message) {
+            setError('Os campos "Para" e "Mensagem" são obrigatórios.');
+            return;
+        }
+
         const formData = new FormData();
         formData.append('Remetente', Email);
         formData.append('Destinatario', to);
@@ -44,7 +50,7 @@ const EmailPopup = ({ onClose, Email }) => {
         }
 
         try {
-            await axios.post('http://10.144.165.26:3001/email', formData, {
+            await axios.post('http://192.168.0.177:3001/email', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data' // Define o cabeçalho para multipart/form-data
                 },
@@ -69,6 +75,7 @@ const EmailPopup = ({ onClose, Email }) => {
                         placeholder="Para"
                         value={to}
                         onChange={(e) => setTo(e.target.value)}
+                        required
                     />
                     {suggestions.length > 0 && (
                         <ul className="suggestions-list">
@@ -89,11 +96,13 @@ const EmailPopup = ({ onClose, Email }) => {
                         placeholder="Mensagem"
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
+                        required
                     />
                     <input
                         type="file"
                         onChange={handleFileChange}
                     />
+                    {error && <p className="error">{error}</p>}
                 </div>
                 <div className="popup-footer">
                     <button onClick={onClose}>Cancelar</button>

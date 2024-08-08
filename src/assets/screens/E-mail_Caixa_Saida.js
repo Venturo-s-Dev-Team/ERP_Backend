@@ -40,7 +40,7 @@ const Caixa_Saida = () => {
     useEffect(() => {
         const fetchData = async () => {
                 try {
-                    const response = await axios.get(`http://10.144.165.26:3001/caixa_saida`, {withCredentials: true});
+                    const response = await axios.get(`http://192.168.0.177:3001/caixa_saida`, {withCredentials: true});
                         setEmails(response.data);
                 } catch (err) {
                     setProtocoloErro("500");
@@ -61,6 +61,11 @@ const Caixa_Saida = () => {
                     <div key={email.id}>
                         <h3>{email.Assunto} para {email.Destinatario}</h3>
                         <p>{email.Mensagem}</p>
+                        {!email.Arquivo ? (
+                            <div></div>
+                        ) : (
+                            <a href={`http://192.168.0.177:3001/uploads/Docs/${email.Arquivo}`}>{email.Arquivo}</a>
+                        )}
                     </div>
                 ))
             ) : (

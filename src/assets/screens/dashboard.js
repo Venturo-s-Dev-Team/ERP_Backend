@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
@@ -23,25 +23,24 @@ const Dashboard = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('jwt_token');
-    console.log('Token from localStorage:', token);
     if (token) {
       try {
         const decodedToken = jwtDecode(token);
         setUserInfo(decodedToken);
       } catch (error) {
-        console.error("Invalid token", error);
-        navigate("/");
+        console.error('Invalid token', error);
+        navigate('/');
       }
     } else {
-      navigate("/");
+      navigate('/');
     }
   }, [navigate]);
 
   const jwtTokenEnd = async () => {
     try {
-      await axios.get('http://10.144.165.26:3001/logout', { withCredentials: true });
+      await axios.get('http://192.168.0.177:3001/logout', { withCredentials: true });
     } catch (err) {
-      alert("Erro ao finalizar o token JWT: ", err);
+      alert('Erro ao finalizar o token JWT: ', err);
     }
   };
 
@@ -49,16 +48,16 @@ const Dashboard = () => {
     try {
       localStorage.removeItem('jwt_token');
     } catch (err) {
-      alert("Erro ao limpar o localStorage: ", err);
+      alert('Erro ao limpar o localStorage: ', err);
     }
   };
 
   const Logout = async () => {
     try {
       await Promise.all([jwtTokenEnd(), localStorageClearLogin()]);
-      navigate("/");
+      navigate('/');
     } catch (error) {
-      alert("Não foi possível sair da sua conta");
+      alert('Não foi possível sair da sua conta');
     }
   };
 
@@ -83,7 +82,7 @@ const Dashboard = () => {
                   {!userInfo.id_EmpresaDb ? (
                     <div>Vazio</div>
                   ) : (
-                    <img src={`http://10.144.165.26:3001/uploads/Logo/${userInfo.id_EmpresaDb}.png`} style={{ width: 100, height: 100 }} alt="" />
+                    <img src={`http://192.168.0.177:3001/uploads/Logo/${userInfo.id_EmpresaDb}.png`} style={{ width: 100, height: 100 }} alt="" />
                   )}
                 </summary>
                 <p>ID: {userInfo.id_user}</p>
@@ -105,7 +104,7 @@ const Dashboard = () => {
                   {!userInfo.Logo ? (
                     <div>Perfil</div>
                   ) : (
-                    <img src={`http://10.144.165.26:3001/uploads/Logo/${userInfo.Logo}`} style={{ width: 100, height: 100, }} alt="" />
+                    <img src={`http://192.168.0.177:3001/uploads/Logo/${userInfo.Logo}`} style={{ width: 100, height: 100 }} alt="" />
                   )}
                 </summary>
                 <p>ID: {userInfo.id_user}</p>
@@ -125,7 +124,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className={`app ${DarkMode ? 'dark' : 'light'} `} style={{ fontSize: `${fontSize}px` }}>
+    <div className={`app ${DarkMode ? 'dark' : 'light'}`} style={{ fontSize: `${fontSize}px` }}>
       <h1>Dashboard</h1>
       <Body />
       <button className='btn btn-warning' onClick={AlternarTema}>

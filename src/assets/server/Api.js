@@ -264,7 +264,7 @@ app.post('/email', uploadDocs.single('anexo'), async (req, res) => {
     // Verifique se o arquivo foi enviado e obtenha o caminho
     let caminhoArquivo = null;
     if (arquivo) {
-      caminhoArquivo = arquivo.path; // Salva o caminho relativo do arquivo
+      caminhoArquivo = arquivo.filename; // Salva apenas o nome do arquivo
     }
 
     // Insira os dados da mensagem no banco de dados
@@ -273,7 +273,7 @@ app.post('/email', uploadDocs.single('anexo'), async (req, res) => {
       Destinatario,
       Assunto,
       Mensagem,
-      Arquivo: caminhoArquivo // Armazena o caminho do arquivo no banco de dados
+      Arquivo: caminhoArquivo // Armazena o nome do arquivo no banco de dados
     }).returning('id'); // Supondo que 'id' é o nome da coluna do ID
 
     if (emailId) {

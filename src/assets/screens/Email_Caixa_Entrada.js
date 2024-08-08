@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode }from 'jwt-decode';
 import Error from '../partials/Erro';
 
 // Componentes
@@ -39,14 +39,14 @@ const Caixa_Entrada = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-                try {
-                    const response = await axios.get(`http://10.144.165.26:3001/caixa_entrada`, {withCredentials: true});
-                        setEmails(response.data);
-                } catch (err) {
-                    setProtocoloErro("500");
-                    setMsgErro("Não foi possível fazer a requisição da sua caixa de entrada");
-                }
-        }
+            try {
+                const response = await axios.get('http://192.168.0.177:3001/caixa_entrada', { withCredentials: true });
+                setEmails(response.data);
+            } catch (err) {
+                setProtocoloErro("500");
+                setMsgErro("Não foi possível fazer a requisição da sua caixa de entrada");
+            }
+        };
         fetchData();
     }, []);
 
@@ -64,7 +64,7 @@ const Caixa_Entrada = () => {
                         {!email.Arquivo ? (
                             <div></div>
                         ) : (
-                            <a href={`http://10.144.165.26:3001/${email.Arquivo}`}>Arquivo</a>
+                            <a href={`http://192.168.0.177:3001/uploads/Docs/${email.Arquivo}`}>{email.Arquivo}</a>
                         )}
                     </div>
                 ))
@@ -78,9 +78,9 @@ const Caixa_Entrada = () => {
         <div className='app'>
             <h1>E-mail: Caixa de Entrada</h1>
             <Cards />
-            <button onClick={() => navigate('/E-mail_Caixa_Saida')} >Caixa de saida</button>
+            <button onClick={() => navigate('/E-mail_Caixa_Saida')} >Caixa de saída</button>
             <button onClick={openPopup}>Nova Mensagem</button>
-            {isPopupOpen && <EmailPopup Email={userInfo.Email} onClose={closePopup} />}
+            {isPopupOpen && <EmailPopup Email={userInfo?.Email} onClose={closePopup} />}
             <button className='btn btn-dark' onClick={() => navigate('/dashboard')} >Voltar</button>
         </div>
     );

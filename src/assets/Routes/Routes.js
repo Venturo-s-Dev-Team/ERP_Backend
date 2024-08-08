@@ -1,30 +1,28 @@
-// Routes.js
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import Login from "../screens/login";
 import Dashboard from "../screens/dashboard";
 import EmpresaInfo from "../screens/db_info";
-import { ThemeProvider } from "../components/ThemeContext";
-import { FontSizeProvider } from "../components/FontContext";
 import Caixa_Entrada from "../screens/Email_Caixa_Entrada";
 import Caixa_Saida from "../screens/E-mail_Caixa_Saida";
+import PrivateRoute from "../config/PrivateRoute";
 
-// Config
-import useAxiosInterceptors from "../config/AxiosInterceptorsToken"; // Em processo...
+import { ThemeProvider } from "../components/ThemeContext";
+import { FontSizeProvider } from "../components/FontContext";
+
 
 const AppRoutes = () => {
-
   return (
     <ThemeProvider>
       <FontSizeProvider>
         <Router>
           <Routes>
             <Route path="/" element={<Login />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/empresaInfo" element={<EmpresaInfo />} />
-            <Route path="/E-mail_Caixa_Entrada" element={<Caixa_Entrada/>} />
-            <Route path="/E-mail_Caixa_Saida" element={<Caixa_Saida/>} />  
+            <Route path="/dashboard" element={<PrivateRoute element={Dashboard} />} />
+            <Route path="/empresaInfo" element={<PrivateRoute element={EmpresaInfo} />} />
+            <Route path="/E-mail_Caixa_Entrada" element={<PrivateRoute element={Caixa_Entrada} />} />
+            <Route path="/E-mail_Caixa_Saida" element={<PrivateRoute element={Caixa_Saida} />} />
           </Routes>
         </Router>
       </FontSizeProvider>
