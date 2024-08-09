@@ -12,7 +12,7 @@ const TableEmpresas = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const Info = await axios.get('http://192.168.0.177:3001/tableEmpresas', { withCredentials: true });
+        const Info = await axios.get('http://10.144.170.15:3001/tableEmpresas', { withCredentials: true });
         if (Info.status === 200) {
           setData(Info.data.InfoTabela);
         }
@@ -27,7 +27,7 @@ const TableEmpresas = () => {
 
   const Desautorizado = async (id) => {
     try {
-      const response = await axios.get(`http://192.168.0.177:3001/desautorizar/${id}`, { withCredentials: true });
+      const response = await axios.get(`http://10.144.170.15:3001/desautorizar/${id}`, { withCredentials: true });
       if (response) {
         alert("Empresa desautorizada. A página será recarregada.");
         window.location.reload(); // Recarrega a página
@@ -41,7 +41,7 @@ const TableEmpresas = () => {
 
   const Autorizado = async (id) => {
     try {
-      const response = await axios.get(`http://192.168.0.177:3001/autorizar/${id}`, { withCredentials: true });
+      const response = await axios.get(`http://10.144.170.15:3001/autorizar/${id}`, { withCredentials: true });
       if (response) {
         alert("Empresa autorizada. A página será recarregada.");
         window.location.reload(); // Recarrega a página
@@ -55,7 +55,7 @@ const TableEmpresas = () => {
 
   const EmpresaInfo = async (id) => {
     try {
-      const response = await axios.get(`http://192.168.0.177:3001/SelectInfoEmpresa/${id}`, { withCredentials: true });
+      const response = await axios.get(`http://10.144.170.15:3001/SelectInfoEmpresa/${id}`, { withCredentials: true });
       if (response && response.data && response.data.InfoEmpresa) {
         const Info = response.data.InfoEmpresa;
         console.log('InfoEmpresa from API:', Info);
@@ -124,7 +124,7 @@ const TableEmpresas = () => {
                         <td>{!item.Logo ? (
                         <div>Vazio</div>
                         ) : (
-                        <img src={`http://192.168.0.177:3001/uploads/Logo/${item.Logo}`} style={{ width: 100, height: 100 }} alt="" />
+                        <img src={`http://10.144.170.15:3001/uploads/Logo/${item.Logo}`} style={{ width: 100, height: 100 }} alt="" />
                         )}
                         </td>
                         <td>

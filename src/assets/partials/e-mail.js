@@ -14,7 +14,7 @@ const EmailPopup = ({ onClose, Email }) => {
         const fetchSuggestions = async () => {
             if (to.length > 1) { // Buscar sugestões apenas se houver mais de 1 caractere
                 try {
-                    const response = await axios.get('http://192.168.0.177:3001/email_suggestions', {
+                    const response = await axios.get('http://10.144.170.15:3001/email_suggestions', {
                         params: { query: to },
                         withCredentials: true
                     });
@@ -50,7 +50,7 @@ const EmailPopup = ({ onClose, Email }) => {
         }
 
         try {
-            await axios.post('http://192.168.0.177:3001/email', formData, {
+            await axios.post('http://10.144.170.15:3001/email', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data' // Define o cabeçalho para multipart/form-data
                 },

@@ -24,9 +24,15 @@ const Dashboard = () => {
   useEffect(() => {
     const verifyToken = async () => {
       try {
-        const response = await axios.get('http://192.168.0.177:3001/verifyToken', { withCredentials: true });
-        const decodedToken = jwtDecode(response.data.token);
-        setUserInfo(decodedToken);
+        const response = await axios.get('http://10.144.170.15:3001/verifyToken', { withCredentials: true });
+        console.log('Token recebido:', response.data.token); // Adicione este log
+        if (typeof response.data.token === 'string') {
+          const decodedToken = jwtDecode(response.data.token);
+          setUserInfo(decodedToken);
+        } else {
+          console.error('Token não é uma string:', response.data.token);
+          navigate('/');
+        }
       } catch (error) {
         console.error('Token inválido', error);
         navigate('/');
@@ -34,30 +40,16 @@ const Dashboard = () => {
     };
     
     verifyToken();
-  }, [navigate]);
-
-  const jwtTokenEnd = async () => {
-    try {
-      await axios.get('http://192.168.0.177:3001/logout', { withCredentials: true });
-    } catch (err) {
-      alert('Erro ao finalizar o token JWT: ', err);
-    }
-  };
-
-  const localStorageClearLogin = () => {
-    try {
-      localStorage.removeItem('jwt_token');
-    } catch (err) {
-      alert('Erro ao limpar o localStorage: ', err);
-    }
-  };
+}, [navigate]);
 
   const Logout = async () => {
     try {
-      await Promise.all([jwtTokenEnd(), localStorageClearLogin()]);
-      navigate('/');
-    } catch (error) {
-      alert('Não foi possível sair da sua conta');
+      const response = await axios.get('http://10.144.170.15:3001/logout', { withCredentials: true });
+      if (response) {
+      navigate('/')
+    }
+    } catch (err) {
+      alert('Erro ao efetuar login');
     }
   };
 
@@ -82,7 +74,7 @@ const Dashboard = () => {
                   {!userInfo.id_EmpresaDb ? (
                     <div>Vazio</div>
                   ) : (
-                    <img src={`http://192.168.0.177:3001/uploads/Logo/${userInfo.id_EmpresaDb}.png`} style={{ width: 100, height: 100 }} alt="" />
+                    <img src={`http://10.144.170.15:3001/uploads/Logo/${userInfo.id_EmpresaDb}.png`} style={{ width: 100, height: 100 }} alt="" />
                   )}
                 </summary>
                 <p>ID: {userInfo.id_user}</p>
@@ -104,7 +96,7 @@ const Dashboard = () => {
                   {!userInfo.Logo ? (
                     <div>Perfil</div>
                   ) : (
-                    <img src={`http://192.168.0.177:3001/uploads/Logo/${userInfo.Logo}`} style={{ width: 100, height: 100 }} alt="" />
+                    <img src={`http://10.144.170.15:3001/uploads/Logo/${userInfo.Logo}`} style={{ width: 100, height: 100 }} alt="" />
                   )}
                 </summary>
                 <p>ID: {userInfo.id_user}</p>

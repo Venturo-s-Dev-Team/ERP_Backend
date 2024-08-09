@@ -17,14 +17,12 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://192.168.0.177:3001/login', {
+      const response = await axios.post('http://10.144.170.15:3001/login', {
         Nome: nome,
         Senha: senha
       }, { withCredentials: true });
 
       if (response.status === 200) {
-        const token = response.data.token;
-        localStorage.setItem('jwt_token', token);
         navigate('/dashboard');
       } else {
         alert("Usuário desconhecido");

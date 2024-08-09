@@ -39,7 +39,7 @@ const Cadastro = () => {
     formData.append('logo', logo);
 
     try {
-      const response = await axios.post('http://192.168.0.177:3001/registro', formData, {
+      const response = await axios.post('http://10.144.170.15:3001/registro', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         },

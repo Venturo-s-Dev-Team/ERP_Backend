@@ -19,7 +19,7 @@ const EmpresaInfo = () => {
   useEffect(() => {
     const verifyToken = async () => {
       try {
-        const response = await axios.get('http://192.168.0.177:3001/verifyToken', { withCredentials: true });
+        const response = await axios.get('http://10.144.170.15:3001/verifyToken', { withCredentials: true });
         const decodedToken = jwtDecode(response.data.token);
         setUserInfo(decodedToken);
 

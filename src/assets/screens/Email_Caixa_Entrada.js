@@ -25,7 +25,7 @@ const Caixa_Entrada = () => {
     useEffect(() => {
         const verifyToken = async () => {
           try {
-            const response = await axios.get('http://192.168.0.177:3001/verifyToken', { withCredentials: true });
+            const response = await axios.get('http://10.144.170.15:3001/verifyToken', { withCredentials: true });
             const decodedToken = jwtDecode(response.data.token);
             setUserInfo(decodedToken);
           } catch (error) {
@@ -40,7 +40,7 @@ const Caixa_Entrada = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await axios.get('http://192.168.0.177:3001/caixa_entrada', { withCredentials: true });
+                const response = await axios.get('http://10.144.170.15:3001/caixa_entrada', { withCredentials: true });
                 setEmails(response.data);
             } catch (err) {
                 setProtocoloErro("500");
@@ -64,7 +64,7 @@ const Caixa_Entrada = () => {
                         {!email.Arquivo ? (
                             <div></div>
                         ) : (
-                            <a href={`http://192.168.0.177:3001/uploads/Docs/${email.Arquivo}`}>{email.Arquivo}</a>
+                            <a href={`http://10.144.170.15:3001/uploads/Docs/${email.Arquivo}`}>{email.Arquivo}</a>
                         )}
                     </div>
                 ))

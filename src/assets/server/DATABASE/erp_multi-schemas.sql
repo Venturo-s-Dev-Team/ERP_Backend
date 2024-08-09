@@ -32,6 +32,7 @@
         CREATE TABLE Despesas (
           id INT PRIMARY KEY AUTO_INCREMENT,
           Nome VARCHAR(255) NOT NULL,
+          Descricao VARCHAR(255),
           Valor DECIMAL(15, 2) NOT NULL
         );
 
