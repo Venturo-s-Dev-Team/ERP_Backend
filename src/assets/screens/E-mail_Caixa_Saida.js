@@ -23,19 +23,19 @@ const Caixa_Saida = () => {
     const closePopup = () => setPopupOpen(false);
 
     useEffect(() => {
-        const token = localStorage.getItem('jwt_token');
-        if (token) {
-            try {
-                const decodedToken = jwtDecode(token);
-                setUserInfo(decodedToken);
-            } catch (error) {
-                console.error("Invalid token", error);
-                navigate("/");
-            }
-        } else {
-            navigate("/");
-        }
-    }, [navigate]);
+        const verifyToken = async () => {
+          try {
+            const response = await axios.get('http://192.168.0.177:3001/verifyToken', { withCredentials: true });
+            const decodedToken = jwtDecode(response.data.token);
+            setUserInfo(decodedToken);
+          } catch (error) {
+            console.error('Token inválido', error);
+            navigate('/');
+          }
+        };
+        
+        verifyToken();
+      }, [navigate]);
 
     useEffect(() => {
         const fetchData = async () => {

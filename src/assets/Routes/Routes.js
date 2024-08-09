@@ -6,7 +6,7 @@ import Dashboard from "../screens/dashboard";
 import EmpresaInfo from "../screens/db_info";
 import Caixa_Entrada from "../screens/Email_Caixa_Entrada";
 import Caixa_Saida from "../screens/E-mail_Caixa_Saida";
-import PrivateRoute from "../config/PrivateRoute";
+import PrivateRoute from "../middlewares/PrivateRoute";
 
 import { ThemeProvider } from "../components/ThemeContext";
 import { FontSizeProvider } from "../components/FontContext";

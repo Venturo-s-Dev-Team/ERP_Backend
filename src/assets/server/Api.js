@@ -5,16 +5,17 @@ const bcrypt = require('bcrypt');
 const bodyParser = require('body-parser');
 const { mainDb } = require('./modules/KnexJS/knexfile'); // Configurações do Knex 
 const { createEmpresaKnexConnection } = require('./modules/KnexJS/MultiSchemas') // Configurações da conexão dinâmica com o banco da empresa
-const { checkIfDatabaseExists } = require('./modules/Functions/MYSQL/CheckIfDatabaseExists') // Verifica se tem um banco de dados existente
+const { checkIfDatabaseExists } = require('./modules/middleware/JWT/VerifyToken') // Verifica se tem um banco de dados existente
 const { copyDatabase } = require('./modules/Functions/MYSQL/CopyDatabase'); // Copia o banco de dados
 const { createConnection } = require('./modules/KnexJS/CreateConnectionMultipleStatements'); // Cria uma conexxão sql MultipleStatements = true
+const { verifyToken } = require('./modules/middleware/JWT/VerifyToken')
 const { logAction } = require('./modules/Functions/LOGS/LogAction_db'); // Função de Logs
+const { logActionEmpresa } = require('./modules/Functions/LOGS/LogAction_db_empresas');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs')
-const { logActionEmpresa } = require('./modules/Functions/LOGS/LogAction_db_empresas');
 
 const app = express();
 
@@ -32,7 +33,7 @@ app.use(cors({
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads/Logo', express.static(path.join(__dirname, 'Logo')));
 
-// LOGIN - CADASTRO - LOGOUT
+// LOGIN - JWT - CADASTRO - LOGOUT
 
 // Rota para login
 app.post('/login', async (req, res) => {
@@ -146,6 +147,10 @@ app.post('/login', async (req, res) => {
   }
 });
 
+// JWT
+
+// Usando a função verifyToken na rota
+app.get('/verifyToken', verifyToken);
 
 
 const storage = multer.diskStorage({

@@ -22,18 +22,18 @@ const Dashboard = () => {
   const { fontSize, AjustarFonte } = useFontSize();
 
   useEffect(() => {
-    const token = localStorage.getItem('jwt_token');
-    if (token) {
+    const verifyToken = async () => {
       try {
-        const decodedToken = jwtDecode(token);
+        const response = await axios.get('http://192.168.0.177:3001/verifyToken', { withCredentials: true });
+        const decodedToken = jwtDecode(response.data.token);
         setUserInfo(decodedToken);
       } catch (error) {
-        console.error('Invalid token', error);
+        console.error('Token inválido', error);
         navigate('/');
       }
-    } else {
-      navigate('/');
-    }
+    };
+    
+    verifyToken();
   }, [navigate]);
 
   const jwtTokenEnd = async () => {

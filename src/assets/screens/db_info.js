@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode'; // Correção do import
+import axios from 'axios';
 
 // Context API
 import { useFontSize } from '../components/FontContext';
@@ -16,32 +17,32 @@ const EmpresaInfo = () => {
   const { fontSize } = useFontSize();
 
   useEffect(() => {
-    // Obtenha o token do localStorage e decodifique-o para obter as informações do usuário
-    const token = localStorage.getItem('jwt_token');
-    if (token) {
+    const verifyToken = async () => {
       try {
-        const decodedToken = jwtDecode(token);
+        const response = await axios.get('http://192.168.0.177:3001/verifyToken', { withCredentials: true });
+        const decodedToken = jwtDecode(response.data.token);
         setUserInfo(decodedToken);
-      } catch (error) {
-        console.error("Erro ao decodificar o token", error);
-      }
-    } else {
-      navigate("/");
-    }
 
-    // Obtenha as informações da empresa do localStorage
-    const info = localStorage.getItem('InfoEmpresa');
-    if (info) {
-      try {
-        const parsedInfo = JSON.parse(info);
-        setEmpresaInfo(parsedInfo[0]); // Supondo que seja um array e queremos o primeiro item
+        // Obtenha as informações da empresa do localStorage
+        const info = localStorage.getItem('InfoEmpresa');
+        if (info) {
+          try {
+            const parsedInfo = JSON.parse(info);
+            setEmpresaInfo(parsedInfo[0]); // Supondo que seja um array e queremos o primeiro item
+          } catch (error) {
+            console.error("Erro ao parsear InfoEmpresa", error);
+          }
+        } else {
+          alert('Não foi possível carregar as informações');
+          navigate('/dashboard');
+        }
       } catch (error) {
-        console.error("Erro ao parsear InfoEmpresa", error);
+        console.error('Token inválido', error);
+        navigate('/');
       }
-    } else {
-      alert('Não foi possível carregar as informações');
-      navigate('/dashboard');
-    }
+    };
+
+    verifyToken();
   }, [navigate]);
 
   const Body = () => {
