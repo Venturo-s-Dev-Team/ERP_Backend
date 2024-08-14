@@ -51,12 +51,21 @@ app.post('/login', async (req, res) => {
         const token = jwt.sign(
           { id_user: user.id, Nome_user: user.Nome, Email: user.email, TypeUser: user.TypeUser, isUser: true },
           process.env.JWT_SECRET,
-          { expiresIn: '1h' } // Token expira em 1 hora.
+          { expiresIn: '10s' } // Token expira em 1 hora.
         );
+
+        // Gera o refresh token.
+        const refreshToken = jwt.sign(
+          { id_user: user.id, Nome_user: user.Nome, Type: 'Main', },
+          process.env.REFRESH_TOKEN_SECRET,
+          { expiresIn: '7d' } // Refresh token expira em 7 dias.
+        );
+
         // Registra log de login bem-sucedido
         await logAction(user.id, user.Nome, 'Login', 'admin_users');
         // Configura o cookie com o token JWT.
         res.cookie('jwt_token', token, { httpOnly: true, secure: false });
+        res.cookie('rt_jwt_token', refreshToken, { httpOnly: true, secure: false });
         res.status(200).send({ token }); // Token é enviado para o front-end
       } else {
         res.status(401).send('Credenciais inválidas'); // Senha inválida.
@@ -76,10 +85,18 @@ app.post('/login', async (req, res) => {
             const token = jwt.sign(
               { id_user: empresa.id, Nome_user: empresa.Gestor, Empresa: empresa.Empresa, Logo: empresa.Logo, Email: empresa.email },
               process.env.JWT_SECRET,
-              { expiresIn: '1h' } // Token expira em 1 hora.
+              { expiresIn: '10s' } // Token expira em 1 hora.
             );
+
+                    // Gera o refresh token.
+        const refreshToken = jwt.sign(
+          { id_user: empresa.id, Nome_user: empresa.Gestor, Type: 'Gestor', },
+          process.env.REFRESH_TOKEN_SECRET,
+          { expiresIn: '7d' } // Refresh token expira em 7 dias.
+        );
             // Configura o cookie com o token JWT.
             res.cookie('jwt_token', token, { httpOnly: true, secure: false });
+            res.cookie('rt_jwt_token', refreshToken, { httpOnly: true, secure: false });
             // Registra log de login bem-sucedido
             await logAction(empresa.id, empresa.Gestor, 'Login', 'cadastro_empresarial');
             await logActionEmpresa(empresa.id, empresa.id, empresa.Gestor, 'Login', 'erp.cadastro_empresarial')
@@ -126,12 +143,20 @@ app.post('/login', async (req, res) => {
             const token = jwt.sign(
               { id_user: funcionario.id, id_EmpresaDb: funcionario.Empresa, Nome_user: funcionario.Nome, Email: funcionario.email, TypeUser: funcionario.TypeUser, isUser: true },
               process.env.JWT_SECRET,
-              { expiresIn: '1h' } // Token expira em 1 hora.
+              { expiresIn: '10s' } // Token expira em 1 hora.
             );
+
+             // Gera o refresh token.
+        const refreshToken = jwt.sign(
+          { id_user: funcionario.id, Nome_user: funcionario.Nome, id_EmpresaDb: funcionario.Empresa, Type: 'Funcionario', },
+          process.env.REFRESH_TOKEN_SECRET,
+          { expiresIn: '7d' } // Refresh token expira em 7 dias.
+        );
             // Registra log de login bem-sucedido
             await logActionEmpresa(funcionario.Empresa, funcionario.id, funcionario.Nome, 'Login', 'Funcionario')
             // Configura o cookie com o token JWT.
             res.cookie('jwt_token', token, { httpOnly: true, secure: false });
+            res.cookie('rt_jwt_token', refreshToken, { httpOnly: true, secure: false });
             res.status(200).send({ token }); // Envia o token para o front-end
           } else {
             res.status(401).send('Credenciais inválidas'); // Senha inválida.
