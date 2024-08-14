@@ -5,7 +5,7 @@ const bcrypt = require('bcrypt');
 const bodyParser = require('body-parser');
 const { mainDb } = require('./modules/KnexJS/knexfile'); // Configurações do Knex 
 const { createEmpresaKnexConnection } = require('./modules/KnexJS/MultiSchemas') // Configurações da conexão dinâmica com o banco da empresa
-const { checkIfDatabaseExists } = require('./modules/middleware/JWT/VerifyToken') // Verifica se tem um banco de dados existente
+const { checkIfDatabaseExists } = require('./modules/middleware/MYSQL/CheckIfDatabaseExists') // Verifica se tem um banco de dados existente
 const { copyDatabase } = require('./modules/Functions/MYSQL/CopyDatabase'); // Copia o banco de dados
 const { createConnection } = require('./modules/KnexJS/CreateConnectionMultipleStatements'); // Cria uma conexxão sql MultipleStatements = true
 const { verifyToken } = require('./modules/middleware/JWT/VerifyToken')
@@ -49,9 +49,9 @@ app.post('/login', async (req, res) => {
       if (isPasswordValid) {
         // Gera o token JWT se a senha for válida.
         const token = jwt.sign(
-          { id_user: user.id, Nome_user: user.Nome, Email: user.email, TypeUser: user.TypeUser, isUser: true },
+          { id_user: user.id, Nome_user: user.Nome, Email: user.email, TypeUser: user.TypeUser, },
           process.env.JWT_SECRET,
-          { expiresIn: '10s' } // Token expira em 1 hora.
+          { expiresIn: '15m' } // Token expira em 15 minutos.
         );
 
         // Gera o refresh token.
@@ -78,33 +78,35 @@ app.post('/login', async (req, res) => {
         // Verifica a senha da empresa com bcrypt.
         const isPasswordValid2 = await bcrypt.compare(Senha, empresa.Senha);
         if (isPasswordValid2) {
-          if (empresa.Autorizado === "NO") {
-            res.status(403).send('Empresa não autorizada'); // Empresa não autorizada para efetuar login
-          } else {
-            // Gera o token JWT se a senha for válida.
-            const token = jwt.sign(
-              { id_user: empresa.id, Nome_user: empresa.Gestor, Empresa: empresa.Empresa, Logo: empresa.Logo, Email: empresa.email },
-              process.env.JWT_SECRET,
-              { expiresIn: '10s' } // Token expira em 1 hora.
-            );
 
-                    // Gera o refresh token.
-        const refreshToken = jwt.sign(
-          { id_user: empresa.id, Nome_user: empresa.Gestor, Type: 'Gestor', },
-          process.env.REFRESH_TOKEN_SECRET,
-          { expiresIn: '7d' } // Refresh token expira em 7 dias.
-        );
-            // Configura o cookie com o token JWT.
-            res.cookie('jwt_token', token, { httpOnly: true, secure: false });
-            res.cookie('rt_jwt_token', refreshToken, { httpOnly: true, secure: false });
-            // Registra log de login bem-sucedido
-            await logAction(empresa.id, empresa.Gestor, 'Login', 'cadastro_empresarial');
-            await logActionEmpresa(empresa.id, empresa.id, empresa.Gestor, 'Login', 'erp.cadastro_empresarial')
-            // Conectar ao banco de dados da empresa específica.
-            const empresaDb = createEmpresaKnexConnection(`empresa_${empresa.id}`);
-            req.empresaDb = empresaDb;
-            res.status(200).send({ token }); // Envia o token para o front-end
-          }
+          // Verifica se há valores nulos em qualquer propriedade do objeto empresa, exceto em empresa.Logo
+          const ValoresNulosObtidos = Object.keys(empresa).some(key => {
+            return key !== 'Logo' && empresa[key] === null;
+          });
+
+          // Gera o token JWT se a senha for válida.
+          const token = jwt.sign(
+            { id_user: empresa.id, Nome_user: empresa.Gestor, RazaoSocial: empresa.RazaoSocial, Logo: empresa.Logo, Email: empresa.email, Status: empresa.Autorizado, ValoresNull: ValoresNulosObtidos },
+            process.env.JWT_SECRET,
+            { expiresIn: '15m' } // Token expira em 15 minutos.
+          );
+
+          // Gera o refresh token.
+          const refreshToken = jwt.sign(
+            { id_user: empresa.id, Nome_user: empresa.Gestor, Type: 'Gestor', Status: empresa.Autorizado },
+            process.env.REFRESH_TOKEN_SECRET,
+            { expiresIn: '7d' } // Refresh token expira em 7 dias.
+          );
+          // Configura o cookie com o token JWT.
+          res.cookie('jwt_token', token, { httpOnly: true, secure: false });
+          res.cookie('rt_jwt_token', refreshToken, { httpOnly: true, secure: false });
+          // Registra log de login bem-sucedido
+          await logAction(empresa.id, empresa.Gestor, 'Login', 'cadastro_empresarial');
+          await logActionEmpresa(empresa.id, empresa.id, empresa.Gestor, 'Login', 'erp.cadastro_empresarial')
+          // Conectar ao banco de dados da empresa específica.
+          const empresaDb = createEmpresaKnexConnection(`empresa_${empresa.id}`);
+          req.empresaDb = empresaDb;
+          res.status(200).send({ token }); // Envia o token para o front-end
         } else {
           res.status(401).send('Credenciais inválidas'); // Senha inválida.
         }
@@ -143,15 +145,15 @@ app.post('/login', async (req, res) => {
             const token = jwt.sign(
               { id_user: funcionario.id, id_EmpresaDb: funcionario.Empresa, Nome_user: funcionario.Nome, Email: funcionario.email, TypeUser: funcionario.TypeUser, isUser: true },
               process.env.JWT_SECRET,
-              { expiresIn: '10s' } // Token expira em 1 hora.
+              { expiresIn: '15m' } // Token expira em 15 minutos.
             );
 
-             // Gera o refresh token.
-        const refreshToken = jwt.sign(
-          { id_user: funcionario.id, Nome_user: funcionario.Nome, id_EmpresaDb: funcionario.Empresa, Type: 'Funcionario', },
-          process.env.REFRESH_TOKEN_SECRET,
-          { expiresIn: '7d' } // Refresh token expira em 7 dias.
-        );
+            // Gera o refresh token.
+            const refreshToken = jwt.sign(
+              { id_user: funcionario.id, Nome_user: funcionario.Nome, id_EmpresaDb: funcionario.Empresa, Type: 'Funcionario', },
+              process.env.REFRESH_TOKEN_SECRET,
+              { expiresIn: '7d' } // Refresh token expira em 7 dias.
+            );
             // Registra log de login bem-sucedido
             await logActionEmpresa(funcionario.Empresa, funcionario.id, funcionario.Nome, 'Login', 'Funcionario')
             // Configura o cookie com o token JWT.
@@ -190,8 +192,8 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-app.post('/registro', upload.single('logo'), async (req, res) => {
-  const { empresa, cnpj, gestor, email, senha } = req.body;
+app.post('/registro', upload.single('Logo'), async (req, res) => {
+  const { RazaoSocial, CNPJ, Gestor, Email, senha } = req.body;
 
   try {
     let logoFilename = null;
@@ -199,12 +201,12 @@ app.post('/registro', upload.single('logo'), async (req, res) => {
       logoFilename = req.file.filename;
     }
 
-    const existingCompanyByName = await mainDb('cadastro_empresarial').where({ Empresa: empresa }).first();
+    const existingCompanyByName = await mainDb('cadastro_empresarial').where({ RazaoSocial }).first();
     if (existingCompanyByName) {
       return res.status(409).send({ errorCode: 409, message: "Empresa já registrada" });
     }
 
-    const existingCompanyByCnpj = await mainDb('cadastro_empresarial').where({ CNPJ: cnpj }).first();
+    const existingCompanyByCnpj = await mainDb('cadastro_empresarial').where({ CNPJ }).first();
     if (existingCompanyByCnpj) {
       return res.status(409).send({ errorCode: 409, message: "CNPJ já registrado" });
     }
@@ -212,11 +214,11 @@ app.post('/registro', upload.single('logo'), async (req, res) => {
     const hashedSenha = await bcrypt.hash(senha, 10);
 
     const [createdCompanyId] = await mainDb('cadastro_empresarial').insert({
-      Empresa: empresa,
-      CNPJ: cnpj,
-      Gestor: gestor,
+      RazaoSocial,
+      CNPJ,
       Logo: logoFilename,
-      email: email,
+      Gestor,
+      Email,
       Senha: hashedSenha
     }).returning('id'); // Supondo que 'id' é o nome da coluna do ID
 
@@ -257,10 +259,11 @@ app.post('/registro', upload.single('logo'), async (req, res) => {
 app.get('/logout', async (req, res) => {
   // Obtendo informações do usuário do token (exemplo)
   const token = req.cookies.jwt_token;
+  const refreshToken = req.cookies.rt_jwt_token
   const { id_user, Nome_user } = jwt.verify(token, process.env.JWT_SECRET);
 
   // Limpar o token JWT do cliente
-  res.clearCookie('jwt_token');
+  res.clearCookie('jwt_token', 'rt_jwt_token');
   console.log('Usuário desconectado');
 
   // Registra log de logout
@@ -320,7 +323,7 @@ app.post('/email', uploadDocs.single('anexo'), async (req, res) => {
 
 //ESTOQUE
 app.post(`/tableEstoque/:id`, async (req, res) => {
-  const { Nome, Codigo , Quantidade, ValorUnitario, Estoque } = req.body;
+  const { Nome, Codigo, Quantidade, ValorUnitario, Estoque } = req.body;
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
     const [newId] = await knexInstance('Estoque').insert({
@@ -339,7 +342,7 @@ app.post(`/tableEstoque/:id`, async (req, res) => {
 
 //CLIENTES
 app.post(`/tableCliente/:id`, async (req, res) => {
-  const { Nome, CPF_CNPJ , Enderecoid } = req.body;
+  const { Nome, CPF_CNPJ, Enderecoid } = req.body;
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
     const [newId] = await knexInstance('Cliente').insert({
@@ -356,7 +359,7 @@ app.post(`/tableCliente/:id`, async (req, res) => {
 
 //FORNECEDORES
 app.post(`/tableFornecedor/:id`, async (req, res) => {
-  const { Nome, CPF_CNPJ , Enderecoid } = req.body;
+  const { Nome, CPF_CNPJ, Enderecoid } = req.body;
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
     const [newId] = await knexInstance('Fornecedor').insert({
@@ -378,7 +381,7 @@ app.post(`/tableFornecedor/:id`, async (req, res) => {
 //ESTOQUE
 app.delete(`/tableEstoque/:id`, async (req, res) => {
   const { id } = req.params; // Obtendo os IDs do produto da rota
-  const { produtoId } = req.body; 
+  const { produtoId } = req.body;
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -398,7 +401,7 @@ app.delete(`/tableEstoque/:id`, async (req, res) => {
 //CLIENTES
 app.delete(`/tableCliente/:id`, async (req, res) => {
   const { id } = req.params; // Obtendo os IDs do produto da rota
-  const { ClienteId } = req.body; 
+  const { ClienteId } = req.body;
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -418,7 +421,7 @@ app.delete(`/tableCliente/:id`, async (req, res) => {
 //FORNECEDORES
 app.delete(`/tableFornecedor/:id`, async (req, res) => {
   const { id } = req.params; // Obtendo os IDs do produto da rota
-  const { FornecedorId } = req.body; 
+  const { FornecedorId } = req.body;
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -631,94 +634,111 @@ app.get('/autorizar/:id', async (req, res) => {
     } else {
       // Se o banco de dados inativo não existe, cria um novo banco de dados com as tabelas necessárias
       const createDatabaseAndTables = `
-        CREATE DATABASE IF NOT EXISTS ${dbName};
-        USE ${dbName};
+        -- Criação do banco de dados
+CREATE DATABASE IF NOT EXISTS ${dbName};
+USE ${dbName};
 
-        CREATE TABLE IF NOT EXISTS Funcionario (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          Nome VARCHAR(255) NOT NULL,
-          Senha VARCHAR(255),
-          TypeUser VARCHAR(50),
-          email varchar(255) NOT NULL,
-          DataInserimento DATETIME DEFAULT CURRENT_TIMESTAMP,
-          Empresa INT(11) DEFAULT '${id}'
-        );
-        
-        CREATE TABLE Ativos (
-          id INT PRIMARY KEY AUTO_INCREMENT,
-          Nome VARCHAR(255) NOT NULL,
-          Valor DECIMAL(15, 2) NOT NULL
-        );
+CREATE TABLE Funcionario (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  Nome VARCHAR(255) NOT NULL,
+  Senha VARCHAR(255),
+  TypeUser VARCHAR(50),
+  email VARCHAR(255) NOT NULL UNIQUE,
+  DataInserimento DATETIME DEFAULT CURRENT_TIMESTAMP,
+  Empresa INT
+);
 
-        CREATE TABLE Passivos (
-          id INT PRIMARY KEY AUTO_INCREMENT,
-          Nome VARCHAR(255) NOT NULL,
-          Valor DECIMAL(15, 2) NOT NULL
-        );
+CREATE TABLE Receita (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  Nome VARCHAR(255) NOT NULL,
+  Valor DECIMAL(15, 2) NOT NULL
+);
 
-        CREATE TABLE Receita (
-          id INT PRIMARY KEY AUTO_INCREMENT,
-          Nome VARCHAR(255) NOT NULL,
-          Valor DECIMAL(15, 2) NOT NULL
-        );
+CREATE TABLE Despesas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  Nome VARCHAR(255) NOT NULL,
+  Valor DECIMAL(15, 2) NOT NULL
+);
 
-        CREATE TABLE Despesas (
-          id INT PRIMARY KEY AUTO_INCREMENT,
-          Nome VARCHAR(255) NOT NULL,
-          Valor DECIMAL(15, 2) NOT NULL
-        );
+CREATE TABLE NotaFiscal (
+  Numero INT PRIMARY KEY,
+  Serie VARCHAR(50) NOT NULL,
+  DataEmissao DATE NOT NULL,
+  FornecedorOuCliente VARCHAR(255) NOT NULL
+);
 
-        CREATE TABLE NotaFiscal (
-          Numero INT PRIMARY KEY,
-          Serie VARCHAR(50) NOT NULL,
-          DataEmissao DATE NOT NULL,
-          FornecedorOuCliente VARCHAR(255) NOT NULL
-        );
+-- Tabela Endereco
+CREATE TABLE Endereco (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  Logradouro VARCHAR(255) NOT NULL,
+  Cidade VARCHAR(255) NOT NULL,
+  Estado VARCHAR(50) NOT NULL,
+  Bairro VARCHAR(255) NOT NULL,
+  Rua VARCHAR(255) NOT NULL,
+  Numero VARCHAR(10) NOT NULL,
+  CEP VARCHAR(9) NOT NULL
+);
 
-        CREATE TABLE Endereco (
-          id INT PRIMARY KEY AUTO_INCREMENT,
-          Logradouro VARCHAR(255) NOT NULL,
-          Cidade VARCHAR(255) NOT NULL,
-          Estado VARCHAR(50) NOT NULL,
-          Bairro VARCHAR(255) NOT NULL,
-          Rua VARCHAR(255) NOT NULL,
-          Numero VARCHAR(10) NOT NULL,
-          CEP VARCHAR(9) NOT NULL
-        );
+CREATE TABLE Cliente (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  Nome VARCHAR(255) NOT NULL,
+  CPF_CNPJ VARCHAR(20) NOT NULL UNIQUE,
+  Enderecoid INT,
+  FOREIGN KEY (Enderecoid) REFERENCES Endereco(id)
+);
 
-        CREATE TABLE Cliente (
-          id INT PRIMARY KEY AUTO_INCREMENT,
-          Nome VARCHAR(255) NOT NULL,
-          CPF_CNPJ VARCHAR(20) NOT NULL UNIQUE,
-          Enderecoid INT,
-          FOREIGN KEY (Enderecoid) REFERENCES Endereco(id)
-        );
+CREATE TABLE Fornecedor (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  Nome VARCHAR(255) NOT NULL,
+  CNPJ VARCHAR(18) NOT NULL UNIQUE,
+  Enderecoid INT,
+  FOREIGN KEY (Enderecoid) REFERENCES Endereco(id)
+);
 
-        CREATE TABLE Fornecedor (
-          id INT PRIMARY KEY AUTO_INCREMENT,
-          Nome VARCHAR(255) NOT NULL,
-          CNPJ VARCHAR(18) NOT NULL UNIQUE,
-          Enderecoid INT,
-          FOREIGN KEY (Enderecoid) REFERENCES Endereco(id)
-        );
+CREATE TABLE Estoque (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  Nome VARCHAR(255) NOT NULL,
+  Codigo VARCHAR(50) NOT NULL UNIQUE,
+  Quantidade INT NOT NULL,
+  ValorUnitario DECIMAL(15, 2) NOT NULL,
+  Estoque VARCHAR(100)
+);
 
-        CREATE TABLE Estoque (
-          id INT PRIMARY KEY AUTO_INCREMENT,
-          Nome VARCHAR(255) NOT NULL,
-          Codigo VARCHAR(50) NOT NULL UNIQUE,
-          Quantidade INT NOT NULL,
-          ValorUnitario DECIMAL(15, 2) NOT NULL,
-          Estoque VARCHAR(100)
-        );
+CREATE TABLE HistoricoLogs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  user_name VARCHAR(255) NOT NULL,
+  action VARCHAR(255) NOT NULL,
+  table_name VARCHAR(255) NOT NULL,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 
-        CREATE TABLE historico_logs (
-          id INT PRIMARY KEY AUTO_INCREMENT,
-          user_id int(11) NOT NULL,
-          user_name varchar(255) NOT NULL,
-          action varchar(255) NOT NULL,
-          table_name varchar(255) NOT NULL,
-          timestamp datetime DEFAULT current_timestamp()
-         );
+CREATE TABLE Contas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  Nome VARCHAR(255) NOT NULL,
+  Tipo VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE Transacoes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  ContaId INT NOT NULL,
+  Data DATE NOT NULL,
+  Valor DECIMAL(15, 2) NOT NULL,
+  Tipo VARCHAR(50) NOT NULL,
+  FOREIGN KEY (ContaId) REFERENCES Contas(id)
+);
+
+CREATE TABLE Pagamentos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  Nome VARCHAR(255) NOT NULL,
+  Valor DECIMAL(15, 2) NOT NULL,
+  Data DATE NOT NULL,
+  Conta INT NOT NULL,
+  TipoPagamento VARCHAR(50), 
+  Descricao TEXT,             
+  FOREIGN KEY (Conta) REFERENCES Contas(id)
+);
+
       `;
       await connection.query(createDatabaseAndTables);
     }
