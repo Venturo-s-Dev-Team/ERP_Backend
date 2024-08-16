@@ -79,10 +79,11 @@ app.post('/login', async (req, res) => {
         const isPasswordValid2 = await bcrypt.compare(Senha, empresa.Senha);
         if (isPasswordValid2) {
 
-          // Verifica se há valores nulos em qualquer propriedade do objeto empresa, exceto em empresa.Logo
-          const ValoresNulosObtidos = Object.keys(empresa).some(key => {
-            return key !== 'Logo' && empresa[key] === null;
-          });
+// Verifica se há valores nulos em qualquer propriedade do objeto empresa, exceto em empresa.Logo e empresa.Site
+const ValoresNulosObtidos = Object.keys(empresa).some(key => {
+  return key !== 'Logo' && key !== 'Site' && empresa[key] === null;
+});
+
 
           // Gera o token JWT se a senha for válida.
           const token = jwt.sign(
@@ -833,6 +834,79 @@ app.post(`/tableCliente/:id`, async (req, res) => {
   } catch (error) {
     console.error('Erro ao atualizar Cliente na tabela Cliente:', error);
     res.status(500).send({ message: 'Erro ao atualizar Cliente na tabela Cliente' });
+  }
+});
+
+// Configuração do multer para salvar documentos em uploads/Docs/CadastroEmpresas
+const DocsEmpresa = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/Docs/CadastroEmpresas/');
+  },
+  filename: function (req, file, cb) {
+    // Salva apenas o nome original do arquivo
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const fileName = `${uniqueSuffix}-${file.originalname}`;
+    cb(null, fileName);
+  }
+});
+
+const DocsEmpresaUpload = multer({ storage: DocsEmpresa });
+
+// Função de update para atualizar as informações da empresa
+app.post('/updateEmpresa/:id', DocsEmpresaUpload.fields([
+  { name: 'ContratoSocial', maxCount: 1 },
+  { name: 'RequerimentoEmpresario', maxCount: 1 },
+  { name: 'CertificadoMEI', maxCount: 1 },
+]), async (req, res) => {
+  const {
+    InscricaoEstadual,
+    Municipio,
+    UF,
+    Logradouro,
+    Numero,
+    CEP,
+    Complemento,
+    Telefone,
+    Site,
+    CPF,
+    RG
+  } = req.body;
+
+  const { id } = req.params; // O ID da empresa está na URL
+
+  try {
+    const updateData = {
+      InscricaoEstadual,
+      Municipio,
+      UF,
+      Logradouro,
+      Numero,
+      CEP,
+      Complemento,
+      Telefone,
+      Site,
+      CPF,
+      RG
+    };
+
+    // Verifica e adiciona os nomes dos arquivos
+    if (req.files.ContratoSocial) {
+      updateData.ContratoSocial = req.files.ContratoSocial[0].filename;
+    }
+    if (req.files.RequerimentoEmpresario) {
+      updateData.RequerimentoEmpresario = req.files.RequerimentoEmpresario[0].filename;
+    }
+    if (req.files.CertificadoMEI) {
+      updateData.CertificadoMEI = req.files.CertificadoMEI[0].filename;
+    }
+
+    // Atualiza as informações da empresa no banco de dados
+    await mainDb('cadastro_empresarial').where({ id }).update(updateData);
+
+    res.status(200).json({ message: 'Informações atualizadas com sucesso!' });
+  } catch (err) {
+    console.error('Erro ao atualizar informações da empresa:', err);
+    res.status(500).json({ message: 'Erro ao atualizar informações da empresa.' });
   }
 });
 
