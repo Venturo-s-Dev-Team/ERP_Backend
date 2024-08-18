@@ -51,7 +51,7 @@ app.post('/login', async (req, res) => {
         const token = jwt.sign(
           { id_user: user.id, Nome_user: user.Nome, Email: user.email, TypeUser: user.TypeUser, },
           process.env.JWT_SECRET,
-          { expiresIn: '15m' } // Token expira em 15 minutos.
+          { expiresIn: '10s' } // Token expira em 15 minutos.
         );
 
         // Gera o refresh token.
@@ -89,7 +89,7 @@ const ValoresNulosObtidos = Object.keys(empresa).some(key => {
           const token = jwt.sign(
             { id_user: empresa.id, Nome_user: empresa.Gestor, RazaoSocial: empresa.RazaoSocial, Logo: empresa.Logo, Email: empresa.email, Status: empresa.Autorizado, ValoresNull: ValoresNulosObtidos },
             process.env.JWT_SECRET,
-            { expiresIn: '15m' } // Token expira em 15 minutos.
+            { expiresIn: '10s' } // Token expira em 15 minutos.
           );
 
           // Gera o refresh token.
@@ -146,7 +146,7 @@ const ValoresNulosObtidos = Object.keys(empresa).some(key => {
             const token = jwt.sign(
               { id_user: funcionario.id, id_EmpresaDb: funcionario.Empresa, Nome_user: funcionario.Nome, Email: funcionario.email, TypeUser: funcionario.TypeUser, isUser: true },
               process.env.JWT_SECRET,
-              { expiresIn: '15m' } // Token expira em 15 minutos.
+              { expiresIn: '10s' } // Token expira em 15 minutos.
             );
 
             // Gera o refresh token.
@@ -514,8 +514,8 @@ app.get('/SelectInfoEmpresa/:id', async (req, res) => {
 
 // E-mails
 app.get('/caixa_entrada', async (req, res) => {
-  const token = req.cookies.jwt_token;
-  const { Email } = jwt.verify(token, process.env.JWT_SECRET);
+
+  const { Email } = req.query
 
   try {
     const Emails = await mainDb('mensagens').where('Destinatario', Email).select('*');
@@ -533,8 +533,8 @@ app.get('/caixa_entrada', async (req, res) => {
 });
 
 app.get('/caixa_saida', async (req, res) => {
-  const token = req.cookies.jwt_token;
-  const { Email } = jwt.verify(token, process.env.JWT_SECRET);
+
+  const { Email } = req.query
 
   try {
     const Emails = await mainDb('mensagens').where('Remetente', Email).select('*');
