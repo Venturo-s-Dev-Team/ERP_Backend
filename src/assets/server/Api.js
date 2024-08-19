@@ -261,14 +261,10 @@ app.get('/logout', async (req, res) => {
   // Obtendo informações do usuário do token (exemplo)
   const token = req.cookies.jwt_token;
   const refreshToken = req.cookies.rt_jwt_token
-  const { id_user, Nome_user } = jwt.verify(token, process.env.JWT_SECRET);
 
   // Limpar o token JWT do cliente
   res.clearCookie('jwt_token', 'rt_jwt_token');
   console.log('Usuário desconectado');
-
-  // Registra log de logout
-  await logAction(id_user, Nome_user, 'Logout', '---');
 
   res.sendStatus(200);
 });
@@ -792,7 +788,7 @@ CREATE TABLE Pagamentos (
 
     await connection.end();
 
-    // Registra log de logout
+    // Registra log
     await logAction(id_user, Nome_user, `Autorizou Empresa_${id}`, `cadastro_empresarial and DB empresa_${id}`);
 
     res.status(200).send('Empresa autorizada e banco de dados configurado.');
