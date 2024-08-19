@@ -514,11 +514,13 @@ app.get('/SelectInfoEmpresa/:id', async (req, res) => {
 
 // E-mails
 app.get('/caixa_entrada', async (req, res) => {
-
-  const { Email } = req.query
+  const { Email } = req.query;
 
   try {
-    const Emails = await mainDb('mensagens').where('Destinatario', Email).select('*');
+    const Emails = await mainDb('mensagens')
+      .where({ 'Destinatario': Email, 'destinatarioDelete': 0 })
+      .select('*');
+      
     if (Emails.length > 0) {
       res.status(200).json(Emails);
       console.log('Caixa de Entrada: ', Emails);
@@ -532,26 +534,70 @@ app.get('/caixa_entrada', async (req, res) => {
   }
 });
 
-app.get('/caixa_saida', async (req, res) => {
-
-  const { Email } = req.query
+app.put('/caixa_entrada/view', async (req, res) => {
+  const { id } = req.body;
 
   try {
-    const Emails = await mainDb('mensagens').where('Remetente', Email).select('*');
-    if (Emails.length > 0) {
-      res.status(200).json(Emails);
-      console.log('Caixa de Saida: ', Emails);
-    } else {
-      res.status(204).send('Não há mensagens para você');
-      console.log('Não há mensagens para você');
-    }
+    await mainDb('mensagens')
+      .where('id', id)
+      .update({ View: 1 });
+
+    res.status(200).send('E-mail marcado como lido');
   } catch (err) {
     console.error(err);
-    res.status(500).send('Erro no servidor: ', err);
+    res.status(500).send('Erro ao marcar o e-mail como lido', err);
   }
 });
 
+// E-mails enviados (Caixa de Saída)
+app.get('/caixa_saida', async (req, res) => {
+  const { Email } = req.query;
 
+  try {
+    const Emails = await mainDb('mensagens')
+      .where({ 'Remetente': Email, 'remetenteDelete': 0 })
+      .select('*');
+      
+    if (Emails.length > 0) {
+      res.status(200).json(Emails);
+      console.log('Caixa de Saída: ', Emails);
+    } else {
+      res.status(204).send('Você não enviou nenhuma mensagem');
+      console.log('Você não enviou nenhuma mensagem');
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erro no servidor ', err);
+  }
+});
+
+app.put('/excluir_email_remetente', async (req, res) => {
+  const { id } = req.body;
+
+  try {
+      await mainDb('mensagens')
+          .where('id', id)
+          .update('remetenteDelete', 1);
+      res.status(200).send('E-mail excluído com sucesso.');
+  } catch (err) {
+      console.error('Erro ao excluir o e-mail', err);
+      res.status(500).send('Erro no servidor.');
+  }
+});
+
+app.put('/excluir_email_destinatario', async (req, res) => {
+  const { id } = req.body;
+
+  try {
+      await mainDb('mensagens')
+          .where('id', id)
+          .update('destinatarioDelete', 1);
+      res.status(200).send('E-mail excluído com sucesso.');
+  } catch (err) {
+      console.error('Erro ao excluir o e-mail', err);
+      res.status(500).send('Erro no servidor.');
+  }
+});
 
 // TABELAS
 

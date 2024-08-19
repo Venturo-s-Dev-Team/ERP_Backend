@@ -35,6 +35,9 @@ CREATE TABLE `mensagens` (
   `Mensagem` text DEFAULT NULL,
   `TimeStamp` datetime DEFAULT current_timestamp(),
   `Arquivo` varchar(255) DEFAULT NULL
+    `View` tinyint(1) NOT NULL DEFAULT '0',
+  `remetenteDelete` tinyint(1) DEFAULT '0',
+  `destinatarioDelete` tinyint(1) DEFAULT '0',
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
