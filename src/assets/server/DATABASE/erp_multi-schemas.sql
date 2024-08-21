@@ -71,13 +71,14 @@
         );
 
         CREATE TABLE Estoque (
-          id INT PRIMARY KEY AUTO_INCREMENT,
-          Nome VARCHAR(255) NOT NULL,
-          Codigo VARCHAR(50) NOT NULL UNIQUE,
-          Quantidade INT NOT NULL,
-          ValorUnitario DECIMAL(15, 2) NOT NULL,
-          Estoque INT NOT NULL
-        );
+  Codigo INT PRIMARY KEY AUTO_INCREMENT,
+  Nome VARCHAR(255) NOT NULL,
+  Quantidade INT NOT NULL,
+  ValorUnitario DECIMAL(15, 2) NOT NULL,
+  Fornecedor VARCHAR(255),
+  Estoque INT NOT NULL
+);
+
 
         CREATE TABLE `historico_logs` (
          id INT PRIMARY KEY AUTO_INCREMENT,

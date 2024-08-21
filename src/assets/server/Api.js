@@ -32,8 +32,9 @@ app.use(cors({
 // Servir arquivos estáticos da pasta 'uploads'
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads/Logo', express.static(path.join(__dirname, 'Logo')));
+app.use('/uploads/ProdutosIMG', express.static(path.join(__dirname, 'ProdutosIMG')));
 
-// LOGIN - JWT - CADASTRO - LOGOUT
+// LOGIN - JWT - CADASTRO_EMPRESARIAL - LOGOUT
 
 // Rota para login
 app.post('/login', async (req, res) => {
@@ -51,7 +52,7 @@ app.post('/login', async (req, res) => {
         const token = jwt.sign(
           { id_user: user.id, Nome_user: user.Nome, Email: user.email, TypeUser: user.TypeUser, },
           process.env.JWT_SECRET,
-          { expiresIn: '10s' } // Token expira em 15 minutos.
+          { expiresIn: '15m' } // Token expira em 15 minutos.
         );
 
         // Gera o refresh token.
@@ -89,7 +90,7 @@ const ValoresNulosObtidos = Object.keys(empresa).some(key => {
           const token = jwt.sign(
             { id_user: empresa.id, Nome_user: empresa.Gestor, RazaoSocial: empresa.RazaoSocial, Logo: empresa.Logo, Email: empresa.email, Status: empresa.Autorizado, ValoresNull: ValoresNulosObtidos },
             process.env.JWT_SECRET,
-            { expiresIn: '10s' } // Token expira em 15 minutos.
+            { expiresIn: '15m' } // Token expira em 15 minutos.
           );
 
           // Gera o refresh token.
@@ -146,7 +147,7 @@ const ValoresNulosObtidos = Object.keys(empresa).some(key => {
             const token = jwt.sign(
               { id_user: funcionario.id, id_EmpresaDb: funcionario.Empresa, Nome_user: funcionario.Nome, Email: funcionario.email, TypeUser: funcionario.TypeUser, isUser: true },
               process.env.JWT_SECRET,
-              { expiresIn: '10s' } // Token expira em 15 minutos.
+              { expiresIn: '15m' } // Token expira em 15 minutos.
             );
 
             // Gera o refresh token.
@@ -180,7 +181,9 @@ const ValoresNulosObtidos = Object.keys(empresa).some(key => {
 // Usando a função verifyToken na rota
 app.get('/verifyToken', verifyToken);
 
+//CADASTRO_EMPRESARIAL
 
+// Registro das empresas
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, 'uploads/Logo');
@@ -269,8 +272,7 @@ app.get('/logout', async (req, res) => {
   res.sendStatus(200);
 });
 
-
-// POST
+// E-MAIL
 
 // Configuração do multer para salvar arquivos na pasta 'uploads/Docs'
 const storageDocs = multer.diskStorage({
@@ -316,25 +318,230 @@ app.post('/email', uploadDocs.single('anexo'), async (req, res) => {
   }
 });
 
+// Sugestão de e-mails
+app.get('/email_suggestions', async (req, res) => {
+  const { query } = req.query;
+
+  try {
+    // Executa ambas requisições simultaneamente no mainDb
+    const [adminUsers, cadastroEmpresarial] = await Promise.all([
+      mainDb('admin_users').where('email', 'like', `%${query}%`).select('email').limit(5),
+      mainDb('cadastro_empresarial').where('email', 'like', `%${query}%`).select('email').limit(5)
+    ]);
+
+    // Combina os resultados do mainDb
+    let suggestions = [...adminUsers, ...cadastroEmpresarial];
+
+    // E os seus status de autorização
+    const empresas = await mainDb('cadastro_empresarial').select('id', 'Autorizado');
+
+    // Função para requerir o e-mail de um database específico
+    const getEmployeeEmails = async (id, autorizado) => {
+      const databaseName = autorizado === "NO" ? `inactive_empresa_${id}` : `empresa_${id}`;
+      const empresaDb = createEmpresaKnexConnection(databaseName); // Creates a dynamic connection
+      try {
+        return await empresaDb('Funcionario').where('email', 'like', `%${query}%`).select('email').limit(5);
+      } catch (err) {
+        // Se houver um erro (EX.: unknow database [...]), haverá um log
+        console.error(`Erro ao acessar o banco de dados da empresa ${id}:`, err);
+        return []; // Retorna uma matriz limpa ou erro
+      }
+    };
+
+    // Pega todos os e-mails de todos database encontrados de forma simultânea
+    const employeeEmailPromises = empresas.map(({ id, Autorizado }) => getEmployeeEmails(id, Autorizado));
+    const employeeEmailsArray = await Promise.all(employeeEmailPromises);
+
+    // Combina os resultados encontrados
+    employeeEmailsArray.forEach(employeeEmails => {
+      suggestions = [...suggestions, ...employeeEmails];
+    });
+
+    // Remove e-mails duplicados do resultado
+    const uniqueEmails = [...new Set(suggestions.map(suggestion => suggestion.email))];
+
+    // Se nenhum e-mail for encontrado
+    if (uniqueEmails.length === 0) {
+      res.status(404).json({ message: "Esse e-mail não foi encontrado" });
+    } else {
+      res.status(200).json(uniqueEmails);
+    }
+  } catch (err) {
+    console.error('Erro ao buscar sugestões de e-mail', err);
+    res.status(500).send('Erro no servidor');
+  }
+});
+
+// E-mails recebidos
+app.get('/caixa_entrada', async (req, res) => {
+  const { Email } = req.query;
+
+  try {
+    const Emails = await mainDb('mensagens')
+      .where({ 'Destinatario': Email, 'destinatarioDelete': 0 })
+      .select('*');
+      
+    if (Emails.length > 0) {
+      res.status(200).json(Emails);
+      console.log('Caixa de Entrada: ', Emails);
+    } else {
+      res.status(204).send('Não há mensagens para você');
+      console.log('Não há mensagens para você');
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erro no servidor ', err);
+  }
+});
+
+// Visualização do e-mail e remoção da notificação
+app.put('/caixa_entrada/view', async (req, res) => {
+  const { id } = req.body;
+
+  try {
+    await mainDb('mensagens')
+      .where('id', id)
+      .update({ View: 1 });
+
+    res.status(200).send('E-mail marcado como lido');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erro ao marcar o e-mail como lido', err);
+  }
+});
+
+// E-mails enviados (Caixa de Saída)
+app.get('/caixa_saida', async (req, res) => {
+  const { Email } = req.query;
+
+  try {
+    const Emails = await mainDb('mensagens')
+      .where({ 'Remetente': Email, 'remetenteDelete': 0 })
+      .select('*');
+      
+    if (Emails.length > 0) {
+      res.status(200).json(Emails);
+      console.log('Caixa de Saída: ', Emails);
+    } else {
+      res.status(204).send('Você não enviou nenhuma mensagem');
+      console.log('Você não enviou nenhuma mensagem');
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erro no servidor ', err);
+  }
+});
+
+// Removendo visualização do remetente para um e-mail
+app.put('/excluir_email_remetente', async (req, res) => {
+  const { id } = req.body;
+
+  try {
+      await mainDb('mensagens')
+          .where('id', id)
+          .update('remetenteDelete', 1);
+      res.status(200).send('E-mail excluído com sucesso.');
+  } catch (err) {
+      console.error('Erro ao excluir o e-mail', err);
+      res.status(500).send('Erro no servidor.');
+  }
+});
+
+// Removendo visualização do destinatário para um e-mail
+app.put('/excluir_email_destinatario', async (req, res) => {
+  const { id } = req.body;
+
+  try {
+      await mainDb('mensagens')
+          .where('id', id)
+          .update('destinatarioDelete', 1);
+      res.status(200).send('E-mail excluído com sucesso.');
+  } catch (err) {
+      console.error('Erro ao excluir o e-mail', err);
+      res.status(500).send('Erro no servidor.');
+  }
+});
+
 // POST - EMPRESAS
 
-//ESTOQUE
-app.post(`/tableEstoque/:id`, async (req, res) => {
-  const { Nome, Codigo, Quantidade, ValorUnitario, Estoque } = req.body;
-  try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const [newId] = await knexInstance('Estoque').insert({
-      Nome,
-      Codigo,
-      Quantidade,
-      ValorUnitario,
-      Estoque,
-    });
-    res.status(201).send({ id: newId, message: 'Produto adicionado com sucesso!' });
-  } catch (error) {
-    console.error('Erro ao adicionar produto na tabela Estoque:', error);
-    res.status(500).send({ message: 'Erro ao adicionar produto na tabela Estoque' });
+// Verifique se o diretório existe, caso contrário, crie-o
+const uploadDir = 'uploads/ProdutosIMG/';
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configuração do armazenamento de arquivos
+const storageProdutosImagens = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const originalName = file.originalname.replace(/\s/g, '_');
+    const uniqueFilename = `${timestamp}-${originalName}`;
+    cb(null, uniqueFilename);
   }
+});
+
+// Filtro para aceitar apenas arquivos de imagem
+const fileFilterImg = (req, file, cb) => {
+  const fileTypes = /jpeg|jpg|png|gif/;
+  const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = fileTypes.test(file.mimetype);
+
+  if (mimetype && extname) {
+    return cb(null, true);
+  } else {
+    console.log('Arquivo inválido:', file.originalname, 'MIME:', file.mimetype, 'Extensão:', path.extname(file.originalname).toLowerCase());
+    return cb(new Error('Somente arquivos de imagem são permitidos!'), false);
+  }
+};
+
+const uploadProdutosImagens = multer({
+  storage: storageProdutosImagens,
+  fileFilter: fileFilterImg
+}).single('Imagem');
+
+// Rota para registrar produtos
+app.post('/RegistrarProduto/:id', (req, res) => {
+  uploadProdutosImagens(req, res, async function (err) {
+    if (err instanceof multer.MulterError) {
+      // Erro do Multer
+      console.error('Erro do multer:', err);
+      return res.status(500).send({ message: 'Erro ao processar o upload da imagem' });
+    } else if (err) {
+      // Erro de validação do arquivo
+      console.error('Erro de validação:', err.message);
+      return res.status(400).send({ message: err.message });
+    }
+
+    const { id } = req.params;
+    const { Nome, Quantidade, ValorUnitario, Estoque, Fornecedor, Tamanho } = req.body;
+    const Imagem = req.file ? req.file.filename : null;
+
+    if (!Imagem) {
+      console.error('Erro: Imagem não recebida ou inválida.');
+      return res.status(400).send({ message: 'Erro: Imagem não recebida ou inválida.' });
+    }
+
+    try {
+      const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+      const [newId] = await knexInstance('Estoque').insert({
+        Nome,
+        Quantidade,
+        ValorUnitario,
+        Estoque,
+        Imagem,
+        Fornecedor,
+        Tamanho
+      });
+
+      res.status(201).send({ id: newId, message: 'Produto adicionado com sucesso!' });
+    } catch (error) {
+      console.error('Erro ao adicionar produto na tabela Estoque:', error);
+      res.status(500).send({ message: 'Erro ao adicionar produto na tabela Estoque' });
+    }
+  });
 });
 
 //CLIENTES
@@ -438,60 +645,6 @@ app.delete(`/tableFornecedor/:id`, async (req, res) => {
 
 // GET
 
-app.get('/email_suggestions', async (req, res) => {
-  const { query } = req.query;
-
-  try {
-    // Executa ambas requisições simultaneamente no mainDb
-    const [adminUsers, cadastroEmpresarial] = await Promise.all([
-      mainDb('admin_users').where('email', 'like', `%${query}%`).select('email').limit(5),
-      mainDb('cadastro_empresarial').where('email', 'like', `%${query}%`).select('email').limit(5)
-    ]);
-
-    // Combina os resultados do mainDb
-    let suggestions = [...adminUsers, ...cadastroEmpresarial];
-
-    // E os seus status de autorização
-    const empresas = await mainDb('cadastro_empresarial').select('id', 'Autorizado');
-
-    // Função para requerir o e-mail de um database específico
-    const getEmployeeEmails = async (id, autorizado) => {
-      const databaseName = autorizado === "NO" ? `inactive_empresa_${id}` : `empresa_${id}`;
-      const empresaDb = createEmpresaKnexConnection(databaseName); // Creates a dynamic connection
-      try {
-        return await empresaDb('Funcionario').where('email', 'like', `%${query}%`).select('email').limit(5);
-      } catch (err) {
-        // Se houver um erro (EX.: unknow database [...]), haverá um log
-        console.error(`Erro ao acessar o banco de dados da empresa ${id}:`, err);
-        return []; // Retorna uma matriz limpa ou erro
-      }
-    };
-
-    // Pega todos os e-mails de todos database encontrados de forma simultânea
-    const employeeEmailPromises = empresas.map(({ id, Autorizado }) => getEmployeeEmails(id, Autorizado));
-    const employeeEmailsArray = await Promise.all(employeeEmailPromises);
-
-    // Combina os resultados encontrados
-    employeeEmailsArray.forEach(employeeEmails => {
-      suggestions = [...suggestions, ...employeeEmails];
-    });
-
-    // Remove e-mails duplicados do resultado
-    const uniqueEmails = [...new Set(suggestions.map(suggestion => suggestion.email))];
-
-    // Se nenhum e-mail for encontrado
-    if (uniqueEmails.length === 0) {
-      res.status(404).json({ message: "Esse e-mail não foi encontrado" });
-    } else {
-      res.status(200).json(uniqueEmails);
-    }
-  } catch (err) {
-    console.error('Erro ao buscar sugestões de e-mail', err);
-    res.status(500).send('Erro no servidor');
-  }
-});
-
-
 // Informações das empresas
 app.get('/SelectInfoEmpresa/:id', async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
@@ -507,93 +660,6 @@ app.get('/SelectInfoEmpresa/:id', async (req, res) => {
     res.status(500)
   }
 })
-
-// E-mails
-app.get('/caixa_entrada', async (req, res) => {
-  const { Email } = req.query;
-
-  try {
-    const Emails = await mainDb('mensagens')
-      .where({ 'Destinatario': Email, 'destinatarioDelete': 0 })
-      .select('*');
-      
-    if (Emails.length > 0) {
-      res.status(200).json(Emails);
-      console.log('Caixa de Entrada: ', Emails);
-    } else {
-      res.status(204).send('Não há mensagens para você');
-      console.log('Não há mensagens para você');
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Erro no servidor ', err);
-  }
-});
-
-app.put('/caixa_entrada/view', async (req, res) => {
-  const { id } = req.body;
-
-  try {
-    await mainDb('mensagens')
-      .where('id', id)
-      .update({ View: 1 });
-
-    res.status(200).send('E-mail marcado como lido');
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Erro ao marcar o e-mail como lido', err);
-  }
-});
-
-// E-mails enviados (Caixa de Saída)
-app.get('/caixa_saida', async (req, res) => {
-  const { Email } = req.query;
-
-  try {
-    const Emails = await mainDb('mensagens')
-      .where({ 'Remetente': Email, 'remetenteDelete': 0 })
-      .select('*');
-      
-    if (Emails.length > 0) {
-      res.status(200).json(Emails);
-      console.log('Caixa de Saída: ', Emails);
-    } else {
-      res.status(204).send('Você não enviou nenhuma mensagem');
-      console.log('Você não enviou nenhuma mensagem');
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Erro no servidor ', err);
-  }
-});
-
-app.put('/excluir_email_remetente', async (req, res) => {
-  const { id } = req.body;
-
-  try {
-      await mainDb('mensagens')
-          .where('id', id)
-          .update('remetenteDelete', 1);
-      res.status(200).send('E-mail excluído com sucesso.');
-  } catch (err) {
-      console.error('Erro ao excluir o e-mail', err);
-      res.status(500).send('Erro no servidor.');
-  }
-});
-
-app.put('/excluir_email_destinatario', async (req, res) => {
-  const { id } = req.body;
-
-  try {
-      await mainDb('mensagens')
-          .where('id', id)
-          .update('destinatarioDelete', 1);
-      res.status(200).send('E-mail excluído com sucesso.');
-  } catch (err) {
-      console.error('Erro ao excluir o e-mail', err);
-      res.status(500).send('Erro no servidor.');
-  }
-});
 
 // TABELAS
 
@@ -629,6 +695,20 @@ app.get(`/tableEstoque/:id`, async (req, res) => {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
     const estoqueInfo = await knexInstance('Estoque').select('*');
     res.status(200).send({ InfoTabela: estoqueInfo });
+  } catch (error) {
+    console.error('Erro ao buscar informações da tabela Estoque:', error);
+    res.status(500).send({ message: 'Erro ao buscar informações da tabela Estoque' });
+  }
+});
+
+// Rota para obter informações da tabela Cliente
+app.get(`/tableCliente/:id`, async (req, res) => {
+  const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    await knexInstance('cliente').select('*');
+    res.status(200)
   } catch (error) {
     console.error('Erro ao buscar informações da tabela Estoque:', error);
     res.status(500).send({ message: 'Erro ao buscar informações da tabela Estoque' });
@@ -739,12 +819,14 @@ CREATE TABLE Fornecedor (
 );
 
 CREATE TABLE Estoque (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  Codigo INT PRIMARY KEY AUTO_INCREMENT,
   Nome VARCHAR(255) NOT NULL,
-  Codigo VARCHAR(50) NOT NULL UNIQUE,
   Quantidade INT NOT NULL,
   ValorUnitario DECIMAL(15, 2) NOT NULL,
-  Estoque VARCHAR(100)
+  Fornecedor VARCHAR(255),
+  Tamanho VARCHAR(255),
+  Imagem VARCHAR(255),
+  Estoque INT NOT NULL
 );
 
 CREATE TABLE HistoricoLogs (

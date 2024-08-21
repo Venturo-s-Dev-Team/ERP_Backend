@@ -35,7 +35,7 @@ const verifyToken = (req, res) => {
         newAccessToken = jwt.sign(
           { id_user: user.id, Nome_user: user.Nome, Email: user.email, TypeUser: user.TypeUser, Refresh: true },
           process.env.JWT_SECRET,
-          { expiresIn: '10s' }
+          { expiresIn: '15m' }
         );
       } else if (decoded.Type === 'Gestor') {
         const empresa = await mainDb('cadastro_empresarial').where({ Gestor: decoded.Nome_user }).first();
@@ -43,9 +43,9 @@ const verifyToken = (req, res) => {
         if (!empresa) return res.status(401).json({ message: 'Empresa não encontrada' });
 
         newAccessToken = jwt.sign(
-          { id_user: empresa.id, Nome_user: empresa.Gestor, RazaoSocial: empresa.RazaoSocial, Logo: empresa.Logo, Email: empresa.Email, Status: empresa.Autorizado },
+          { id_user: empresa.id, Nome_user: empresa.Gestor, RazaoSocial: empresa.RazaoSocial, Logo: empresa.Logo, Email: empresa.email, Status: empresa.Autorizado },
           process.env.JWT_SECRET,
-          { expiresIn: '10s' }
+          { expiresIn: '15m' }
         );
       } else if (decoded.Type === 'Funcionario') {
         const empresaDb = createEmpresaKnexConnection(`empresa_${decoded.id_EmpresaDb}`);
@@ -56,7 +56,7 @@ const verifyToken = (req, res) => {
         newAccessToken = jwt.sign(
           { id_user: funcionario.id, id_EmpresaDb: funcionario.Empresa, Nome_user: funcionario.Nome, Email: funcionario.email, TypeUser: funcionario.TypeUser },
           process.env.JWT_SECRET,
-          { expiresIn: '10s' }
+          { expiresIn: '15m' }
         );
       } else {
         return res.status(401).json({ message: 'Tipo de usuário desconhecido' });

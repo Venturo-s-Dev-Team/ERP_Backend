@@ -1,0 +1,68 @@
+import React, { useState, useEffect } from "react";
+import {
+  Text,
+  View,
+  Animated,
+  TouchableOpacity,
+} from "react-native";
+import { useFonts } from "expo-font";
+import Index from "./src/rotas/Index";
+
+export default function App() {
+  const [start, setStart] = useState(false);
+  const [heightValue] = useState(new Animated.Value(1000));
+
+  useEffect(() => {
+    if (start) {
+      setTimeout(() => {
+        Animated.timing(heightValue, {
+          toValue: 0,
+          duration: 5000,
+          useNativeDriver: false,
+        }).start();
+      }, 2000);
+    }
+  }, [start, heightValue]);
+
+  const [fontsLoaded] = useFonts({
+    Font1: require("./src/assets/Fonts/DMSerifDisplay-Regular.ttf"),
+    Font2: require("./src/assets/Fonts/AlfaSlabOne-Regular.ttf"),
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
+
+  return (
+    <>
+      {start ? (
+        <View style={{ flex: 1 }}>
+          <Index />
+        </View>
+      ) : (
+        <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, alignItems: "right" }}>
+              <View
+                style={{
+                  width: "100%",
+                  heigth: "100%",
+                  left: "20%",
+                  top: "18%",
+                  textAlign:'left',
+                                 
+                }}
+              >
+                <Text>TESTEEEEEEEEEEEE</Text>
+                <TouchableOpacity
+                  onPress={() => setStart(true)}
+                >
+                  <Text>Get Started</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+        </View>
+      )}
+    </>
+  );
+}
