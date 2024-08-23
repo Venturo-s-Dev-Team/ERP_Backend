@@ -463,6 +463,37 @@ app.post(`/tableFornecedor/:id`, async (req, res) => {
   }
 });
 
+// GET
+
+// Historic Logs na Database principal 
+app.get('/MainHistoricLogs', async (req, res) => {
+  const { page = 1, limit = 15, year, month } = req.query;
+  const offset = (page - 1) * limit;
+
+  try {
+    let query = mainDb('historico_logs').select('*').limit(limit).offset(offset).orderBy('timestamp', 'desc');
+
+    if (year) {
+      query = query.whereRaw('YEAR(timestamp) = ?', [year]);
+    }
+
+    if (month) {
+      query = query.whereRaw('MONTH(timestamp) = ?', [month]);
+    }
+
+    const logs = await query;
+    const totalLogs = await mainDb('historico_logs').count('* as count').first();
+    const totalPages = Math.ceil(totalLogs.count / limit);
+
+    res.status(200).json({ logs, currentPage: page, totalPages });
+    console.log('Requisição do log efetuada com sucesso');
+  } catch (err) {
+    console.error('Erro ao buscar logs:', err);
+    res.status(500).send('Erro ao buscar logs');
+  }
+});
+
+
 
 app.listen(3002, () => {
     console.log('Server two listening on port 3002');
