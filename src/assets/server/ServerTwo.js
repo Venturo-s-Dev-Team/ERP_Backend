@@ -67,7 +67,7 @@ app.post('/login', async (req, res) => {
                 // Configura o cookie com o token JWT.
                 res.cookie('jwt_token', token, { httpOnly: true, secure: false });
                 res.cookie('rt_jwt_token', refreshToken, { httpOnly: true, secure: false });
-                res.status(200).send({ token }); // Token é enviado para o front-end
+                res.status(200).send({ token, TypeUser: 'SuperAdmin' }); // Token é enviado para o front-end
             } else {
                 res.status(401).send('Credenciais inválidas'); // Senha inválida.
             }
@@ -108,7 +108,7 @@ app.post('/login', async (req, res) => {
                     // Conectar ao banco de dados da empresa específica.
                     const empresaDb = createEmpresaKnexConnection(`empresa_${empresa.id}`);
                     req.empresaDb = empresaDb;
-                    res.status(200).send({ token }); // Envia o token para o front-end
+                    res.status(200).send({ token, TypeUser: 'Gestor' }); // Envia o token para o front-end
                 } else {
                     res.status(401).send('Credenciais inválidas'); // Senha inválida.
                 }
@@ -161,7 +161,7 @@ app.post('/login', async (req, res) => {
                         // Configura o cookie com o token JWT.
                         res.cookie('jwt_token', token, { httpOnly: true, secure: false });
                         res.cookie('rt_jwt_token', refreshToken, { httpOnly: true, secure: false });
-                        res.status(200).send({ token }); // Envia o token para o front-end
+                        res.status(200).send({ token, TypeUser: funcionario.TypeUser }); // Envia o token para o front-end
                     } else {
                         res.status(401).send('Credenciais inválidas'); // Senha inválida.
                     }
@@ -271,6 +271,198 @@ app.get('/logout', async (req, res) => {
 
     res.sendStatus(200);
 });
+
+//POSTS -- Complementação das informações do Registro de Empresa
+
+// Configuração do multer para salvar documentos em uploads/Docs/CadastroEmpresas
+const DocsEmpresa = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, 'uploads/Docs/CadastroEmpresas/');
+    },
+    filename: function (req, file, cb) {
+      // Salva apenas o nome original do arquivo
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const fileName = `${uniqueSuffix}-${file.originalname}`;
+      cb(null, fileName);
+    }
+  });
+  
+  const DocsEmpresaUpload = multer({ storage: DocsEmpresa });
+  
+  // Função de update para atualizar as informações da empresa
+  app.post('/updateEmpresa/:id', DocsEmpresaUpload.fields([
+    { name: 'ContratoSocial', maxCount: 1 },
+    { name: 'RequerimentoEmpresario', maxCount: 1 },
+    { name: 'CertificadoMEI', maxCount: 1 },
+  ]), async (req, res) => {
+    const {
+      InscricaoEstadual,
+      Municipio,
+      UF,
+      Logradouro,
+      Numero,
+      CEP,
+      Complemento,
+      Telefone,
+      Site,
+      CPF,
+      RG
+    } = req.body;
+  
+    const { id } = req.params; // O ID da empresa está na URL
+  
+    try {
+      const updateData = {
+        InscricaoEstadual,
+        Municipio,
+        UF,
+        Logradouro,
+        Numero,
+        CEP,
+        Complemento,
+        Telefone,
+        Site,
+        CPF,
+        RG
+      };
+  
+      // Verifica e adiciona os nomes dos arquivos
+      if (req.files.ContratoSocial) {
+        updateData.ContratoSocial = req.files.ContratoSocial[0].filename;
+      }
+      if (req.files.RequerimentoEmpresario) {
+        updateData.RequerimentoEmpresario = req.files.RequerimentoEmpresario[0].filename;
+      }
+      if (req.files.CertificadoMEI) {
+        updateData.CertificadoMEI = req.files.CertificadoMEI[0].filename;
+      }
+  
+      // Atualiza as informações da empresa no banco de dados
+      await mainDb('cadastro_empresarial').where({ id }).update(updateData);
+  
+      res.status(200).json({ message: 'Informações atualizadas com sucesso!' });
+    } catch (err) {
+      console.error('Erro ao atualizar informações da empresa:', err);
+      res.status(500).json({ message: 'Erro ao atualizar informações da empresa.' });
+    }
+  });
+
+// POST - EMPRESAS
+
+// Verifique se o diretório existe, caso contrário, crie-o
+const uploadDir = 'uploads/ProdutosIMG/';
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configuração do armazenamento de arquivos
+const storageProdutosImagens = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const originalName = file.originalname.replace(/\s/g, '_');
+    const uniqueFilename = `${timestamp}-${originalName}`;
+    cb(null, uniqueFilename);
+  }
+});
+
+// Filtro para aceitar apenas arquivos de imagem
+const fileFilterImg = (req, file, cb) => {
+  const fileTypes = /jpeg|jpg|png|gif/;
+  const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = fileTypes.test(file.mimetype);
+
+  if (mimetype && extname) {
+    return cb(null, true);
+  } else {
+    console.log('Arquivo inválido:', file.originalname, 'MIME:', file.mimetype, 'Extensão:', path.extname(file.originalname).toLowerCase());
+    return cb(new Error('Somente arquivos de imagem são permitidos!'), false);
+  }
+};
+
+const uploadProdutosImagens = multer({
+  storage: storageProdutosImagens,
+  fileFilter: fileFilterImg
+}).single('Imagem');
+
+// Rota para registrar produtos
+app.post('/RegistrarProduto/:id', (req, res) => {
+  uploadProdutosImagens(req, res, async function (err) {
+    if (err instanceof multer.MulterError) {
+      // Erro do Multer
+      console.error('Erro do multer:', err);
+      return res.status(500).send({ message: 'Erro ao processar o upload da imagem' });
+    } else if (err) {
+      // Erro de validação do arquivo
+      console.error('Erro de validação:', err.message);
+      return res.status(400).send({ message: err.message });
+    }
+
+    const { id } = req.params;
+    const { Nome, Quantidade, ValorUnitario, Estoque, Fornecedor, Tamanho } = req.body;
+    const Imagem = req.file ? req.file.filename : null;
+
+    if (!Imagem) {
+      console.error('Erro: Imagem não recebida ou inválida.');
+      return res.status(400).send({ message: 'Erro: Imagem não recebida ou inválida.' });
+    }
+
+    try {
+      const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+      const [newId] = await knexInstance('Estoque').insert({
+        Nome,
+        Quantidade,
+        ValorUnitario,
+        Estoque,
+        Imagem,
+        Fornecedor,
+        Tamanho
+      });
+
+      res.status(201).send({ id: newId, message: 'Produto adicionado com sucesso!' });
+    } catch (error) {
+      console.error('Erro ao adicionar produto na tabela Estoque:', error);
+      res.status(500).send({ message: 'Erro ao adicionar produto na tabela Estoque' });
+    }
+  });
+});
+
+//CLIENTES
+app.post(`/tableCliente/:id`, async (req, res) => {
+  const { Nome, CPF_CNPJ, Enderecoid } = req.body;
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const [newId] = await knexInstance('Cliente').insert({
+      Nome,
+      CPF_CNPJ,
+      Enderecoid,
+    });
+    res.status(201).send({ id: newId, message: 'Cliente registrado com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao adicionar Cliente na tabela Clientes:', error);
+    res.status(500).send({ message: 'Erro ao adicionar Cliente na tabela Clientes' });
+  }
+});
+
+//FORNECEDORES
+app.post(`/tableFornecedor/:id`, async (req, res) => {
+  const { Nome, CPF_CNPJ, Enderecoid } = req.body;
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const [newId] = await knexInstance('Fornecedor').insert({
+      Nome,
+      CPF_CNPJ,
+      Enderecoid,
+    });
+    res.status(201).send({ id: newId, message: 'Fornecedor registrado com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao adicionar Fornecedor na tabela Fornecedor:', error);
+    res.status(500).send({ message: 'Erro ao adicionar For na tabela Clientes' });
+  }
+});
+
 
 app.listen(3002, () => {
     console.log('Server two listening on port 3002');
