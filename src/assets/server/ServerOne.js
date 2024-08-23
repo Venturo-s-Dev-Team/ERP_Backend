@@ -1,14 +1,12 @@
 require('dotenv').config();
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
 const bodyParser = require('body-parser');
 const { mainDb } = require('./modules/KnexJS/knexfile'); // Configurações do Knex 
 const { createEmpresaKnexConnection } = require('./modules/KnexJS/MultiSchemas') // Configurações da conexão dinâmica com o banco da empresa
 const { checkIfDatabaseExists } = require('./modules/middleware/MYSQL/CheckIfDatabaseExists') // Verifica se tem um banco de dados existente
 const { copyDatabase } = require('./modules/Functions/MYSQL/CopyDatabase'); // Copia o banco de dados
 const { createConnection } = require('./modules/KnexJS/CreateConnectionMultipleStatements'); // Cria uma conexxão sql MultipleStatements = true
-const { verifyToken } = require('./modules/middleware/JWT/VerifyToken')
 const { logAction } = require('./modules/Functions/LOGS/LogAction_db'); // Função de Logs
 const { logActionEmpresa } = require('./modules/Functions/LOGS/LogAction_db_empresas');
 const cookieParser = require('cookie-parser');
