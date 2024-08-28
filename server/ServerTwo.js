@@ -349,6 +349,36 @@ const DocsEmpresa = multer.diskStorage({
 
 // POST - EMPRESAS
 
+// Função para cadastrar um funcionário
+app.post('/cadastro_funcionario', async (req, res) => {
+  const { Nome, Senha, TypeUser, Email, id } = req.body;
+
+  try {
+    // Verifica se o funcionário já existe
+    const existingUser = await createEmpresaKnexConnection(`empresa_${id}`)('funcionario').where({ Nome }).first();
+    if (existingUser) {
+      return res.status(409).json({ message: 'Funcionário já existe.' });
+    }
+
+    // Hash da senha
+    const hashedPassword = await bcrypt.hash(Senha, 10);
+
+    // Inserção no banco de dados
+    await createEmpresaKnexConnection(`empresa_${id}`)('funcionario').insert({
+      Nome,
+      Senha: hashedPassword,
+      TypeUser,
+      Email
+    });
+
+    return res.status(200).json({ message: 'Funcionário cadastrado com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao cadastrar funcionário:', error);
+    return res.status(500).json({ message: 'Erro ao cadastrar funcionário.' });
+  }
+});
+
+
 // Verifique se o diretório existe, caso contrário, crie-o
 const uploadDir = 'uploads/ProdutosIMG/';
 if (!fs.existsSync(uploadDir)) {
@@ -467,7 +497,7 @@ app.post(`/tableFornecedor/:id`, async (req, res) => {
 
 // Historic Logs na Database principal 
 app.get('/MainHistoricLogs', async (req, res) => {
-  const { page = 1, limit = 15, year, month } = req.query;
+  const { page = 1, limit = 12, year, month } = req.query;
   const offset = (page - 1) * limit;
 
   try {

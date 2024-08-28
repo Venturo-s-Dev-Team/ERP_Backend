@@ -377,9 +377,7 @@ app.get('/tableFuncionario/:id', async (req, res) => {
 
 app.get('/autorizar/:id', async (req, res) => {
   const { id } = req.params;
-  // Obtendo informações do usuário do token (exemplo)
-  const token = req.cookies.jwt_token;
-  const { id_user, Nome_user } = jwt.verify(token, process.env.JWT_SECRET);
+  const {id_user, Nome_user} = req.body
 
   try {
     // Atualiza o registro da empresa para autorizado
@@ -413,7 +411,7 @@ CREATE TABLE Funcionario (
   TypeUser VARCHAR(50),
   email VARCHAR(255) NOT NULL UNIQUE,
   DataInserimento DATETIME DEFAULT CURRENT_TIMESTAMP,
-  Empresa INT
+  Empresa INT(11) DEFAULT '${id}'
 );
 
 CREATE TABLE Receita (
@@ -425,7 +423,9 @@ CREATE TABLE Receita (
 CREATE TABLE Despesas (
   id INT AUTO_INCREMENT PRIMARY KEY,
   Nome VARCHAR(255) NOT NULL,
-  Valor DECIMAL(15, 2) NOT NULL
+  Valor DECIMAL(15, 2) NOT NULL,
+  DataExpiracao DATETIME DEFAULT CURRENT_TIMESTAMP,
+  Finalizado TINYINT(1) DEFAULT "0"
 );
 
 CREATE TABLE NotaFiscal (
@@ -528,9 +528,7 @@ CREATE TABLE Pagamentos (
 
 app.get('/desautorizar/:id', async (req, res) => {
   const { id } = req.params;
-  // Obtendo informações do usuário do token (exemplo)
-  const token = req.cookies.jwt_token;
-  const { id_user, Nome_user } = jwt.verify(token, process.env.JWT_SECRET);
+  const {id_user, Nome_user} = req.body
 
   try {
     // Atualiza o registro da empresa para não autorizado
