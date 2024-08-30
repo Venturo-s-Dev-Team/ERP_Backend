@@ -4,7 +4,7 @@ const logActionEmpresa = async (empresaId, userId, userName, action, tableName) 
     try {
       const connection = await createEmpresaKnexConnection(`empresa_${empresaId}`)
       if (connection) {
-      await createEmpresaKnexConnection(`empresa_${empresaId}`)('historico_logs').insert({
+      await createEmpresaKnexConnection(`empresa_${empresaId}`)('historicologs').insert({
         user_id: userId,
         user_name: userName,
         action,

@@ -247,6 +247,46 @@ app.delete(`/tableEstoqueDelete/:id`, async (req, res) => {
   }
 });
 
+//PAGAMENTOS
+app.delete(`/tablePagamentosDelete/:id`, async (req, res) => {
+  const { id } = req.params; // Obtendo os IDs do produto da rota
+  const { pagamentoId } = req.body;
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const rowsDeleted = await knexInstance('pagamentos').where({ id: pagamentoId }).del();
+
+    if (rowsDeleted) {
+      res.status(200).send({ message: 'Registro de Pagamento deletado com sucesso!' });
+    } else {
+      res.status(404).send({ message: 'Registro de Pagamento não encontrado' });
+    }
+  } catch (error) {
+    console.error('Erro ao deletar Registro de Pagamento da tabela pagamentos:', error);
+    res.status(500).send({ message: 'Erro ao deletar Registro de Pagamento da tabela pagamentos' });
+  }
+});
+
+//DESPESAS
+app.delete(`/tableDespesasDelete/:id`, async (req, res) => {
+  const { id } = req.params; // Obtendo os IDs do produto da rota
+  const { despesasId } = req.body;
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const rowsDeleted = await knexInstance('despesas').where({ id: despesasId }).del();
+
+    if (rowsDeleted) {
+      res.status(200).send({ message: 'Registro de despesa deletado com sucesso!' });
+    } else {
+      res.status(404).send({ message: 'Registro de despesa não encontrado' });
+    }
+  } catch (error) {
+    console.error('Erro ao deletar Registro de despesa da tabela despesa:', error);
+    res.status(500).send({ message: 'Erro ao deletar Registro de despesa da tabela despesa' });
+  }
+});
+
 //CLIENTES
 app.delete(`/tableCliente/:id`, async (req, res) => {
   const { id } = req.params; // Obtendo os IDs do produto da rota
@@ -346,6 +386,48 @@ app.get(`/tableEstoque/:id`, async (req, res) => {
   }
 });
 
+// Rota para obter informações da tabela Pagamentos
+app.get(`/tablepagamentos/:id`, async (req, res) => {
+  const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const estoqueInfo = await knexInstance('pagamentos').select('*');
+    res.status(200).send({ InfoTabela: estoqueInfo });
+  } catch (error) {
+    console.error('Erro ao buscar informações da tabela Pagamentos:', error);
+    res.status(500).send({ message: 'Erro ao buscar informações da tabela Pagamentos' });
+  }
+});
+
+// Rota para obter informações da tabela Receitas
+app.get(`/tablereceitas/:id`, async (req, res) => {
+  const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const estoqueInfo = await knexInstance('receitas').select('*');
+    res.status(200).send({ InfoTabela: estoqueInfo });
+  } catch (error) {
+    console.error('Erro ao buscar informações da tabela receitas:', error);
+    res.status(500).send({ message: 'Erro ao buscar informações da tabela receitas' });
+  }
+});
+
+// Rota para obter informações da tabela Despesas
+app.get(`/tabledespesas/:id`, async (req, res) => {
+  const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const estoqueInfo = await knexInstance('despesas').select('*');
+    res.status(200).send({ InfoTabela: estoqueInfo });
+  } catch (error) {
+    console.error('Erro ao buscar informações da tabela despesas:', error);
+    res.status(500).send({ message: 'Erro ao buscar informações da tabela despesas' });
+  }
+});
+
 // Rota para obter informações da tabela Cliente
 app.get(`/tableCliente/:id`, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
@@ -414,10 +496,11 @@ CREATE TABLE Funcionario (
   Empresa INT(11) DEFAULT '${id}'
 );
 
-CREATE TABLE Receita (
+CREATE TABLE Receitas (
   id INT AUTO_INCREMENT PRIMARY KEY,
   Nome VARCHAR(255) NOT NULL,
-  Valor DECIMAL(15, 2) NOT NULL
+  Valor DECIMAL(15, 2) NOT NULL,
+  DataExpiracao datetime DEFAULT current_timestamp()
 );
 
 CREATE TABLE Despesas (
@@ -565,7 +648,7 @@ app.get('/desautorizar/:id', async (req, res) => {
 //UPDATE - EMPRESAS 
 
 //CLIENTES
-app.post(`/tableCliente/:id`, async (req, res) => {
+app.put(`/tableCliente/:id`, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
   const { Nome, CPF_CNPJ, Enderecoid } = req.body;
 
@@ -584,7 +667,7 @@ app.post(`/tableCliente/:id`, async (req, res) => {
 });
 
 //FORNECEDORES
-app.post(`/tableFornecedorRegistro/:id`, async (req, res) => {
+app.put(`/tableFornecedorRegistro/:id`, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
   const { Nome, CNPJ, Enderecoid } = req.body;
 
@@ -599,6 +682,25 @@ app.post(`/tableFornecedorRegistro/:id`, async (req, res) => {
   } catch (error) {
     console.error('Erro ao atualizar Fornecedor na tabela Fornecedor:', error);
     res.status(500).send({ message: 'Erro ao atualizar Fornecedor na tabela Fornecedor' });
+  }
+});
+
+//PAGAMENTOS
+app.put(`/tablePagamentosRegistro/:id`, async (req, res) => {
+  const { id } = req.params; // Obtendo o ID da empresa da rota
+  const { Nome, Valor, Data, Conta, TipoPagamento, Descricao } = req.body;
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const [newId] = await knexInstance('pagamentos').insert({
+      Nome,
+      CNPJ,
+      Enderecoid,
+    });
+    res.status(201).send({ id: newId, message: 'Registro de pagamento atualizado com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao atualizar pagamento na tabela pagamento:', error);
+    res.status(500).send({ message: 'Erro ao atualizar pagamento na tabela pagamento' });
   }
 });
 
