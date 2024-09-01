@@ -234,7 +234,7 @@ app.delete(`/tableEstoqueDelete/:id`, async (req, res) => {
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const rowsDeleted = await knexInstance('Estoque').where({ id: produtoId }).del();
+    const rowsDeleted = await knexInstance('estoque').where({ id: produtoId }).del();
 
     if (rowsDeleted) {
       res.status(200).send({ message: 'Produto deletado com sucesso!' });
@@ -378,7 +378,7 @@ app.get(`/tableEstoque/:id`, async (req, res) => {
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const estoqueInfo = await knexInstance('Estoque').select('*');
+    const estoqueInfo = await knexInstance('estoque').select('*');
     res.status(200).send({ InfoTabela: estoqueInfo });
   } catch (error) {
     console.error('Erro ao buscar informações da tabela Estoque:', error);
@@ -447,7 +447,7 @@ app.get('/tableFuncionario/:id', async (req, res) => {
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const funcionarioInfo = await knexInstance('Funcionario').select('*');
+    const funcionarioInfo = await knexInstance('funcionario').select('*');
     res.status(200).send({ InfoTabela: funcionarioInfo });
   } catch (error) {
     console.error('Erro ao buscar informações da tabela Estoque:', error);
@@ -486,7 +486,7 @@ app.get('/autorizar/:id', async (req, res) => {
 CREATE DATABASE IF NOT EXISTS ${dbName};
 USE ${dbName};
 
-CREATE TABLE Funcionario (
+CREATE TABLE funcionario (
   id INT AUTO_INCREMENT PRIMARY KEY,
   Nome VARCHAR(255) NOT NULL,
   Senha VARCHAR(255),
@@ -496,14 +496,14 @@ CREATE TABLE Funcionario (
   Empresa INT(11) DEFAULT '${id}'
 );
 
-CREATE TABLE Receitas (
+CREATE TABLE receitas (
   id INT AUTO_INCREMENT PRIMARY KEY,
   Nome VARCHAR(255) NOT NULL,
   Valor DECIMAL(15, 2) NOT NULL,
   DataExpiracao datetime DEFAULT current_timestamp()
 );
 
-CREATE TABLE Despesas (
+CREATE TABLE despesas (
   id INT AUTO_INCREMENT PRIMARY KEY,
   Nome VARCHAR(255) NOT NULL,
   Valor DECIMAL(15, 2) NOT NULL,
@@ -511,15 +511,14 @@ CREATE TABLE Despesas (
   Finalizado TINYINT(1) DEFAULT "0"
 );
 
-CREATE TABLE NotaFiscal (
+CREATE TABLE notafiscal (
   Numero INT PRIMARY KEY,
   Serie VARCHAR(50) NOT NULL,
   DataEmissao DATE NOT NULL,
   FornecedorOuCliente VARCHAR(255) NOT NULL
 );
 
--- Tabela Endereco
-CREATE TABLE Endereco (
+CREATE TABLE endereco (
   id INT AUTO_INCREMENT PRIMARY KEY,
   Logradouro VARCHAR(255) NOT NULL,
   Cidade VARCHAR(255) NOT NULL,
@@ -530,23 +529,23 @@ CREATE TABLE Endereco (
   CEP VARCHAR(9) NOT NULL
 );
 
-CREATE TABLE Cliente (
+CREATE TABLE cliente (
   id INT AUTO_INCREMENT PRIMARY KEY,
   Nome VARCHAR(255) NOT NULL,
   CPF_CNPJ VARCHAR(20) NOT NULL UNIQUE,
   Enderecoid INT,
-  FOREIGN KEY (Enderecoid) REFERENCES Endereco(id)
+  FOREIGN KEY (Enderecoid) REFERENCES endereco(id)
 );
 
-CREATE TABLE Fornecedor (
+CREATE TABLE fornecedor (
   id INT AUTO_INCREMENT PRIMARY KEY,
   Nome VARCHAR(255) NOT NULL,
   CNPJ VARCHAR(18) NOT NULL UNIQUE,
   Enderecoid INT,
-  FOREIGN KEY (Enderecoid) REFERENCES Endereco(id)
+  FOREIGN KEY (Enderecoid) REFERENCES endereco(id)
 );
 
-CREATE TABLE Estoque (
+CREATE TABLE estoque (
   Codigo INT PRIMARY KEY AUTO_INCREMENT,
   Nome VARCHAR(255) NOT NULL,
   Quantidade INT NOT NULL,
@@ -557,7 +556,7 @@ CREATE TABLE Estoque (
   Estoque INT NOT NULL
 );
 
-CREATE TABLE HistoricoLogs (
+CREATE TABLE historicologs (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   user_name VARCHAR(255) NOT NULL,
@@ -566,22 +565,22 @@ CREATE TABLE HistoricoLogs (
   timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE Contas (
+CREATE TABLE contas (
   id INT AUTO_INCREMENT PRIMARY KEY,
   Nome VARCHAR(255) NOT NULL,
   Tipo VARCHAR(50) NOT NULL
 );
 
-CREATE TABLE Transacoes (
+CREATE TABLE transacoes (
   id INT AUTO_INCREMENT PRIMARY KEY,
   ContaId INT NOT NULL,
   Data DATE NOT NULL,
   Valor DECIMAL(15, 2) NOT NULL,
   Tipo VARCHAR(50) NOT NULL,
-  FOREIGN KEY (ContaId) REFERENCES Contas(id)
+  FOREIGN KEY (ContaId) REFERENCES contas(id)
 );
 
-CREATE TABLE Pagamentos (
+CREATE TABLE pagamentos (
   id INT AUTO_INCREMENT PRIMARY KEY,
   Nome VARCHAR(255) NOT NULL,
   Valor DECIMAL(15, 2) NOT NULL,
@@ -589,7 +588,7 @@ CREATE TABLE Pagamentos (
   Conta INT NOT NULL,
   TipoPagamento VARCHAR(50), 
   Descricao TEXT,             
-  FOREIGN KEY (Conta) REFERENCES Contas(id)
+  FOREIGN KEY (Conta) REFERENCES contas(id)
 );
 
       `;
