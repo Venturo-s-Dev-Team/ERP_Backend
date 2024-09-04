@@ -143,7 +143,8 @@ app.get('/caixa_entrada', async (req, res) => {
       
     if (Emails.length > 0) {
       res.status(200).json(Emails);
-      console.log('Caixa de Entrada: ', Emails);
+      console.log(`E-mails enviados para ${Email}: `)
+      console.table(Emails);
     } else {
       res.status(204).send('Não há mensagens para você');
       console.log('Não há mensagens para você');
@@ -181,7 +182,8 @@ app.get('/caixa_saida', async (req, res) => {
       
     if (Emails.length > 0) {
       res.status(200).json(Emails);
-      console.log('Caixa de Saída: ', Emails);
+      console.log(`E-mails enviados por ${Email}: `)
+      console.table('Caixa de Saída: ', Emails);
     } else {
       res.status(204).send('Você não enviou nenhuma mensagem');
       console.log('Você não enviou nenhuma mensagem');
@@ -450,8 +452,22 @@ app.get('/tableFuncionario/:id', async (req, res) => {
     const funcionarioInfo = await knexInstance('funcionario').select('*');
     res.status(200).send({ InfoTabela: funcionarioInfo });
   } catch (error) {
-    console.error('Erro ao buscar informações da tabela Estoque:', error);
+    console.error('Erro ao buscar informações da tabela Funcionários:', error);
     res.status(500).send({ message: 'Erro ao buscar informações da tabela Funcionário' });
+  }
+})
+
+//VENDAS
+app.get('/tableVendas/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const funcionarioInfo = await knexInstance('vendas').select('*');
+    res.status(200);
+  } catch (error) {
+    console.error('Erro ao buscar informações da tabela Vendas:', error);
+    res.status(500).send({ message: 'Erro ao buscar informações da tabela Vendas' });
   }
 })
 
@@ -702,6 +718,64 @@ app.put(`/tablePagamentosRegistro/:id`, async (req, res) => {
     res.status(500).send({ message: 'Erro ao atualizar pagamento na tabela pagamento' });
   }
 });
+
+//VENDAS
+app.put(`/tableVendasUp/:id`, async (req, res) => {
+  const { id } = req.params; // Obtendo o ID da empresa da rota
+  const { Nome, Valor, Data, Conta, TipoPagamento, Descricao } = req.body;
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const [newId] = await knexInstance('vendas').insert({
+      Nome,
+      CNPJ,
+      Enderecoid,
+    });
+    res.status(201).send({ id: newId, message: 'Registro de Vendas atualizado com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao atualizar Venda na tabela Vendas:', error);
+    res.status(500).send({ message: 'Erro ao atualizar Venda na tabela Vendas' });
+  }
+});
+
+// DESPESAS
+
+// Mudar o estado finalizado para 1
+app.put('/tableDespesasFinalizado/:id', async (req, res) => {
+  const { id } = req.params;
+  const {id_EmpresaDb} = req.body
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+    await knexInstance('despesas')
+      .where('id', id)
+      .update({ Finalizado: 1 });
+
+    res.sendStatus(200); // Envia uma resposta 200 OK
+  } catch (err) {
+    console.log("Erro ao alterar estado: ", err);
+    res.sendStatus(500); // Envia uma resposta 500 Internal Server Error
+  }
+});
+
+// Mudar o estado finalizado para 1
+app.put('/tableDespesasNaoFinalizado/:id', async (req, res) => {
+  const { id } = req.params;
+  const {id_EmpresaDb} = req.body
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+    await knexInstance('despesas')
+      .where('id', id)
+      .update({ Finalizado: 0 });
+
+    res.sendStatus(200); // Envia uma resposta 200 OK
+  } catch (err) {
+    console.log("Erro ao alterar estado: ", err);
+    res.sendStatus(500); // Envia uma resposta 500 Internal Server Error
+  }
+});
+
 
 app.listen(3001, () => {
   console.log('Server One listening on port 3001');

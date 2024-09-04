@@ -493,6 +493,40 @@ app.post(`/tableFornecedor/:id`, async (req, res) => {
   }
 });
 
+//DESPESAS
+app.post(`/registrarDespesas`, async (req, res) => {
+  const { Valor, Nome, DataExpiracao, id_EmpresaDb } = req.body;
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+    const [newId] = await knexInstance('despesas').insert({
+      Valor,
+      Nome,
+      DataExpiracao,
+    });
+    res.status(201).send({ id: newId, message: 'despesa registrada com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao adicionar despesa na tabela despesa:', error);
+    res.status(500).send({ message: 'Erro ao adicionar For na tabela despesa' });
+  }
+});
+
+//RECEITAS
+app.post(`/registrarReceitas`, async (req, res) => {
+  const { Nome, Valor, id_EmpresaDb } = req.body;
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+    const [newId] = await knexInstance('receitas').insert({
+      Nome,
+      Valor,
+    });
+    res.status(201).send({ id: newId, message: 'receita registrada com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao adicionar receita na tabela receita:', error);
+    res.status(500).send({ message: 'Erro ao adicionar For na tabela receitas' });
+  }
+});
+
 // GET
 
 // Historic Logs na Database principal 
