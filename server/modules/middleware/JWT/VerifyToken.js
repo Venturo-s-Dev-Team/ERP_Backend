@@ -14,6 +14,7 @@ const verifyToken = (req, res) => {
   const refreshToken = req.cookies.rt_jwt_token;
 
   if (!token || !refreshToken) {
+    console.log("Token não fornecido ou tentativa de invasão")
     return res.status(401).json({ message: 'Token não fornecido' });
   }
 

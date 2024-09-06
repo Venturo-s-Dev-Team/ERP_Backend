@@ -13,7 +13,8 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs')
+const fs = require('fs');
+const { verifyToken } = require('./modules/middleware/JWT/VerifyToken');
 
 const app = express();
 
