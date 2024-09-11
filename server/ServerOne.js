@@ -297,7 +297,7 @@ app.delete(`/tableCliente/:id`, async (req, res) => {
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const rowsDeleted = await knexInstance('Cliente').where({ id: ClienteId }).del();
+    const rowsDeleted = await knexInstance('cliente').where({ id: ClienteId }).del();
 
     if (rowsDeleted) {
       res.status(200).send({ message: 'Cliente deletado com sucesso!' });
@@ -535,23 +535,28 @@ CREATE TABLE notafiscal (
   FornecedorOuCliente VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE endereco (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  Logradouro VARCHAR(255) NOT NULL,
-  Cidade VARCHAR(255) NOT NULL,
-  Estado VARCHAR(50) NOT NULL,
-  Bairro VARCHAR(255) NOT NULL,
-  Rua VARCHAR(255) NOT NULL,
-  Numero VARCHAR(10) NOT NULL,
-  CEP VARCHAR(9) NOT NULL
-);
-
 CREATE TABLE cliente (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  Nome VARCHAR(255) NOT NULL,
-  CPF_CNPJ VARCHAR(20) NOT NULL UNIQUE,
-  Enderecoid INT,
-  FOREIGN KEY (Enderecoid) REFERENCES endereco(id)
+  razao_social VARCHAR(255) NOT NULL,
+  nome_fantasia VARCHAR(255),
+  logradouro VARCHAR(255) NOT NULL,
+  bairro VARCHAR(100) NOT NULL,
+  cidade VARCHAR(100) NOT NULL,
+  cep VARCHAR(10) NOT NULL,
+  uf VARCHAR(2),
+  email VARCHAR(255) NOT NULL,
+  autorizados TEXT NOT NULL,
+  observacoes TEXT,
+  dia_para_faturamento DATETIME,  -- Alterado para DATETIME
+  funcionario ENUM('SIM', 'NÃO'),
+  ramo_atividade VARCHAR(255) NOT NULL,
+  limite DECIMAL(10, 2),
+  site VARCHAR(255),
+  ativo ENUM('SIM', 'NÃO'),
+  cpf_cnpj VARCHAR(18) NOT NULL,
+  ie VARCHAR(12) NOT NULL,
+  telefone VARCHAR(20),
+  celular VARCHAR(20)
 );
 
 CREATE TABLE fornecedor (
@@ -670,7 +675,7 @@ app.put(`/tableCliente/:id`, async (req, res) => {
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const [newId] = await knexInstance('Cliente').insert({
+    const [newId] = await knexInstance('cliente').insert({
       Nome,
       CPF_CNPJ,
       Enderecoid,

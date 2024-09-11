@@ -43,24 +43,33 @@
           FornecedorOuCliente VARCHAR(255) NOT NULL
         );
 
-        CREATE TABLE Endereco (
-          id INT PRIMARY KEY AUTO_INCREMENT,
-          Logradouro VARCHAR(255) NOT NULL,
-          Cidade VARCHAR(255) NOT NULL,
-          Estado VARCHAR(50) NOT NULL,
-          Bairro VARCHAR(255) NOT NULL,
-          Rua VARCHAR(255) NOT NULL,
-          Numero VARCHAR(10) NOT NULL,
-          CEP VARCHAR(9) NOT NULL
-        );
 
-        CREATE TABLE Cliente (
-          id INT PRIMARY KEY AUTO_INCREMENT,
-          Nome VARCHAR(255) NOT NULL,
-          CPF_CNPJ VARCHAR(20) NOT NULL UNIQUE,
-          Enderecoid INT,
-          FOREIGN KEY (Enderecoid) REFERENCES Endereco(id)
-        );
+        CREATE TABLE CadastroCliente (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    razao_social VARCHAR(255),
+    nome_fantasia VARCHAR(255),
+    endereco VARCHAR(255),
+    bairro VARCHAR(100),
+    email VARCHAR(255),
+    autorizados ENUM('SIM', 'NÃO'),
+    observacoes TEXT,
+    dia_para_faturamento DATETIME,
+    funcionario ENUM('SIM', 'NÃO'),
+    ramo_atividade VARCHAR(255),
+    isento ENUM('SIM', 'NÃO'),
+    limite DECIMAL(10, 2),
+    site VARCHAR(255),
+    ativo ENUM('SIM', 'NÃO'),
+    cnpj VARCHAR(18),
+    ie VARCHAR(12),
+    numero INT,
+    cidade VARCHAR(100),
+    telefone VARCHAR(20),
+    cep VARCHAR(10),
+    uf VARCHAR(2),
+    celular VARCHAR(20)
+);
+
 
         CREATE TABLE Fornecedor (
           id INT PRIMARY KEY AUTO_INCREMENT,

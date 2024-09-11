@@ -44,7 +44,7 @@ const verifyToken = (req, res) => {
         if (!empresa) return res.status(401).json({ message: 'Empresa não encontrada' });
 
         newAccessToken = jwt.sign(
-          { id_user: empresa.id, Nome_user: empresa.Gestor, RazaoSocial: empresa.RazaoSocial, Logo: empresa.Logo, Email: empresa.email, Status: empresa.Autorizado },
+          { id_user: empresa.id, id_EmpresaDb: empresa.id, Nome_user: empresa.Gestor, RazaoSocial: empresa.RazaoSocial, Logo: empresa.Logo, Email: empresa.email, Status: empresa.Autorizado },
           process.env.JWT_SECRET,
           { expiresIn: '15m' }
         );

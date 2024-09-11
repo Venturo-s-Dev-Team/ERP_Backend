@@ -88,7 +88,7 @@ app.post('/login', async (req, res) => {
 
                     // Gera o token JWT se a senha for válida.
                     const token = jwt.sign(
-                        { id_user: empresa.id, Nome_user: empresa.Gestor, RazaoSocial: empresa.RazaoSocial, Logo: empresa.Logo, Email: empresa.email, Status: empresa.Autorizado, ValoresNull: ValoresNulosObtidos },
+                        { id_user: empresa.id, id_EmpresaDb: empresa.id, Nome_user: empresa.Gestor, RazaoSocial: empresa.RazaoSocial, Logo: empresa.Logo, Email: empresa.email, Status: empresa.Autorizado, ValoresNull: ValoresNulosObtidos },
                         process.env.JWT_SECRET,
                         { expiresIn: '15m' } // Token expira em 15 minutos.
                     );
@@ -351,7 +351,7 @@ const DocsEmpresa = multer.diskStorage({
 
 // Função para cadastrar um funcionário
 app.post('/cadastro_funcionario', async (req, res) => {
-  const { Nome, Senha, TypeUser, Email, id } = req.body;
+  const { Nome, Senha, TypeUser, Email, id, id_EmpresaDb, userId, userName } = req.body;
 
   try {
     // Verifica se o funcionário já existe
@@ -371,6 +371,7 @@ app.post('/cadastro_funcionario', async (req, res) => {
       Email
     });
 
+    await logActionEmpresa(id_EmpresaDb, userId, userName, `Cadastrou um funcionário com o nome: ${Nome}, e com o cargo de ${TypeUser}`, `empresa_${id_EmpresaDb}.funcionario`)
     return res.status(200).json({ message: 'Funcionário cadastrado com sucesso!' });
   } catch (error) {
     console.error('Erro ao cadastrar funcionário:', error);
@@ -431,7 +432,7 @@ app.post('/RegistrarProduto/:id', (req, res) => {
     }
 
     const { id } = req.params;
-    const { Nome, Quantidade, ValorUnitario, Estoque, Fornecedor, Tamanho } = req.body;
+    const { Nome, Quantidade, ValorUnitario, Estoque, Fornecedor, Tamanho, userId, userName } = req.body;
     const Imagem = req.file ? req.file.filename : null;
 
     if (!Imagem) {
@@ -450,6 +451,8 @@ app.post('/RegistrarProduto/:id', (req, res) => {
         Fornecedor,
         Tamanho
       });
+      console.log(userId, userName)
+      await logActionEmpresa(id, userId, userName, `Registrou um produto com o nome: ${Nome}`, `empresa_${id}.estoque`)
 
       res.status(201).send({ id: newId, message: 'Produto adicionado com sucesso!' });
     } catch (error) {
@@ -460,16 +463,50 @@ app.post('/RegistrarProduto/:id', (req, res) => {
 });
 
 //CLIENTES
-app.post(`/tableCliente/:id`, async (req, res) => {
-  const { Nome, CPF_CNPJ, Enderecoid } = req.body;
+app.post(`/registerCliente`, async (req, res) => {
+  const {
+    id_EmpresaDb,
+    razao_social,
+    nome_fantasia,
+    logradouro,
+    bairro,
+    cidade,
+    cep,
+    uf,
+    email, 
+    telefone,
+    ativo,
+    ie,
+    dia_para_faturamento,
+    ramo_atividade,
+    funcionario,
+    limite,
+    site,
+    autorizados
+   } = req.body;
+
   try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const [newId] = await knexInstance('Cliente').insert({
-      Nome,
-      CPF_CNPJ,
-      Enderecoid,
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+    const [newId] = await knexInstance('cliente').insert({
+      razao_social,
+      nome_fantasia,
+      logradouro,
+      bairro,
+      cidade,
+      cep,
+      uf,
+      email, 
+      telefone,
+      ativo,
+      ie,
+      dia_para_faturamento,
+      ramo_atividade,
+      funcionario,
+      limite,
+      site,
+      autorizados
     });
-    res.status(201).send({ id: newId, message: 'Cliente registrado com sucesso!' });
+    res.status(200).send({ id: newId, message: 'Cliente registrado com sucesso!' });
   } catch (error) {
     console.error('Erro ao adicionar Cliente na tabela Clientes:', error);
     res.status(500).send({ message: 'Erro ao adicionar Cliente na tabela Clientes' });
@@ -495,7 +532,7 @@ app.post(`/tableFornecedor/:id`, async (req, res) => {
 
 //DESPESAS
 app.post(`/registrarDespesas`, async (req, res) => {
-  const { Valor, Nome, DataExpiracao, id_EmpresaDb } = req.body;
+  const { Valor, Nome, DataExpiracao, id_EmpresaDb, userName, userId } = req.body;
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
@@ -504,6 +541,8 @@ app.post(`/registrarDespesas`, async (req, res) => {
       Nome,
       DataExpiracao,
     });
+
+    await logActionEmpresa(id_EmpresaDb, userId, userName, `Registrou uma despesa com o nome: ${Nome}`, `empresa_${id_EmpresaDb}.despesas`)
     res.status(201).send({ id: newId, message: 'despesa registrada com sucesso!' });
   } catch (error) {
     console.error('Erro ao adicionar despesa na tabela despesa:', error);
@@ -513,13 +552,15 @@ app.post(`/registrarDespesas`, async (req, res) => {
 
 //RECEITAS
 app.post(`/registrarReceitas`, async (req, res) => {
-  const { Nome, Valor, id_EmpresaDb } = req.body;
+  const { Nome, Valor, id_EmpresaDb, userId, userName } = req.body;
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
     const [newId] = await knexInstance('receitas').insert({
       Nome,
       Valor,
     });
+
+    await logActionEmpresa(id_EmpresaDb, userId, userName, `Registrou uma receita com o nome: ${Nome}`, `empresa_${id_EmpresaDb}.receitas`)
     res.status(201).send({ id: newId, message: 'receita registrada com sucesso!' });
   } catch (error) {
     console.error('Erro ao adicionar receita na tabela receita:', error);
