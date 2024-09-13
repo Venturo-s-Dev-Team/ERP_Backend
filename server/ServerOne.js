@@ -537,34 +537,34 @@ CREATE TABLE notafiscal (
 
 CREATE TABLE cliente (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  razao_social VARCHAR(255) NOT NULL,
+  razao_social VARCHAR(255),
   nome_fantasia VARCHAR(255),
-  logradouro VARCHAR(255) NOT NULL,
-  bairro VARCHAR(100) NOT NULL,
-  cidade VARCHAR(100) NOT NULL,
-  cep VARCHAR(10) NOT NULL,
+  logradouro VARCHAR(255),
+  bairro VARCHAR(100),
+  cidade VARCHAR(100),
+  cep VARCHAR(10),
   uf VARCHAR(2),
-  email VARCHAR(255) NOT NULL,
-  autorizados TEXT NOT NULL,
+  email VARCHAR(255),
+  autorizados TEXT ,
   observacoes TEXT,
   dia_para_faturamento DATETIME,  -- Alterado para DATETIME
   funcionario ENUM('SIM', 'NÃO'),
-  ramo_atividade VARCHAR(255) NOT NULL,
+  ramo_atividade VARCHAR(255) ,
   limite DECIMAL(10, 2),
   site VARCHAR(255),
   ativo ENUM('SIM', 'NÃO'),
-  cpf_cnpj VARCHAR(18) NOT NULL,
-  ie VARCHAR(12) NOT NULL,
+  cpf_cnpj VARCHAR(18) ,
+  ie VARCHAR(12),
   telefone VARCHAR(20),
   celular VARCHAR(20)
 );
 
-CREATE TABLE fornecedor (
+-- Criação da tabela fornecedor
+CREATE TABLE IF NOT EXISTS fornecedor (
   id INT AUTO_INCREMENT PRIMARY KEY,
   Nome VARCHAR(255) NOT NULL,
   CNPJ VARCHAR(18) NOT NULL UNIQUE,
-  Enderecoid INT,
-  FOREIGN KEY (Enderecoid) REFERENCES endereco(id)
+  Enderecoid INT
 );
 
 CREATE TABLE estoque (

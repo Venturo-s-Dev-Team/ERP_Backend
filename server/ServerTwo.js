@@ -467,6 +467,8 @@ app.post(`/registerCliente`, async (req, res) => {
   const {
     id_EmpresaDb,
     razao_social,
+    cpf_cnpj,
+    observacoes,
     nome_fantasia,
     logradouro,
     bairro,
@@ -489,6 +491,8 @@ app.post(`/registerCliente`, async (req, res) => {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
     const [newId] = await knexInstance('cliente').insert({
       razao_social,
+      cpf_cnpj,
+      observacoes,
       nome_fantasia,
       logradouro,
       bairro,
