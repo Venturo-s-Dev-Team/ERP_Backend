@@ -484,7 +484,7 @@ app.post(`/registerCliente`, async (req, res) => {
     funcionario,
     limite,
     site,
-    autorizados
+    autorizados,
    } = req.body;
 
   try {
@@ -531,6 +531,28 @@ app.post(`/tableFornecedor/:id`, async (req, res) => {
   } catch (error) {
     console.error('Erro ao adicionar Fornecedor na tabela Fornecedor:', error);
     res.status(500).send({ message: 'Erro ao adicionar For na tabela Clientes' });
+  }
+});
+
+// VENDAS
+app.post(`/tableVenda/:id`, async (req, res) => {
+  const { nome_cliente, produto, quantidade, desconto, forma_pagamento, total, garantia, vendedor } = req.body;
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${req.params.id}`);
+    const [newId] = await knexInstance('venda').insert({
+      nome_cliente,
+      produto,
+      quantidade,
+      desconto,
+      forma_pagamento,
+      total,
+      garantia,
+      vendedor,
+    });
+    res.status(201).send({ id: newId, message: 'Venda registrada com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao adicionar venda na tabela Venda:', error);
+    res.status(500).send({ message: 'Erro ao adicionar venda na tabela Venda' });
   }
 });
 

@@ -437,8 +437,8 @@ app.get(`/tableCliente/:id`, async (req, res) => {
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    await knexInstance('cliente').select('*');
-    res.status(200)
+    const response = await knexInstance('cliente').select('*');
+    res.status(200).send(response)
   } catch (error) {
     console.error('Erro ao buscar informações da tabela Estoque:', error);
     res.status(500).send({ message: 'Erro ao buscar informações da tabela Estoque' });
@@ -464,7 +464,7 @@ app.get('/tableVendas/:id', async (req, res) => {
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const funcionarioInfo = await knexInstance('vendas').select('*');
+    const funcionarioInfo = await knexInstance('venda').select('*');
     res.status(200);
   } catch (error) {
     console.error('Erro ao buscar informações da tabela Vendas:', error);
@@ -535,6 +535,19 @@ CREATE TABLE notafiscal (
   FornecedorOuCliente VARCHAR(255) NOT NULL
 );
 
+CREATE TABLE venda (
+  id_venda INT AUTO_INCREMENT PRIMARY KEY,
+  nome_cliente VARCHAR(100),       -- Nome do cliente
+  produto VARCHAR(100),            -- Nome do produto
+  quantidade INT,                  -- Quantidade do produto
+  desconto DECIMAL(10, 2),         -- Desconto aplicado
+  forma_pagamento VARCHAR(50),     -- Forma de pagamento (Ex: Cartão, Boleto)
+  total DECIMAL(10, 2),            -- Valor total da venda
+  garantia VARCHAR(50),            -- Garantia oferecida (Ex: 1 ano, 6 meses)
+  vendedor VARCHAR(100)            -- Nome do vendedor
+);
+
+
 CREATE TABLE cliente (
   id INT AUTO_INCREMENT PRIMARY KEY,
   razao_social VARCHAR(255),
@@ -548,7 +561,7 @@ CREATE TABLE cliente (
   autorizados TEXT ,
   observacoes TEXT,
   dia_para_faturamento DATETIME,  -- Alterado para DATETIME
-  funcionario ENUM('SIM', 'NÃO'),
+  funcionario TEXT,
   ramo_atividade VARCHAR(255) ,
   limite DECIMAL(10, 2),
   site VARCHAR(255),
@@ -728,11 +741,11 @@ app.put(`/tablePagamentosRegistro/:id`, async (req, res) => {
 //VENDAS
 app.put(`/tableVendasUp/:id`, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
-  const { Nome, Valor, Data, Conta, TipoPagamento, Descricao } = req.body;
+  const { nome_cliente, produto, quantidade, desconto, forma_pagamento, total, garantia, vendedor } = req.body;
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const [newId] = await knexInstance('vendas').insert({
+    const [newId] = await knexInstance('venda').insert({
       Nome,
       CNPJ,
       Enderecoid,
@@ -743,6 +756,7 @@ app.put(`/tableVendasUp/:id`, async (req, res) => {
     res.status(500).send({ message: 'Erro ao atualizar Venda na tabela Vendas' });
   }
 });
+
 
 // DESPESAS
 
@@ -781,6 +795,33 @@ app.put('/tableDespesasNaoFinalizado/:id', async (req, res) => {
     res.sendStatus(500); // Envia uma resposta 500 Internal Server Error
   }
 });
+
+// ESTOQUE
+app.put('updateProduct/:id', async (req, res) => {
+  const { idProduto } = req.params;
+  const { Nome, Quantidade, ValorUnitario, Fornecedor,} = req.body;
+
+  // Objeto de atualização que conterá somente os campos não nulos
+  const updateFields = {};
+
+  if (Nome) updateFields.Nome = Nome;
+  if (Quantidade) updateFields.Quantidade = Quantidade;
+  if (ValorUnitario) updateFields.ValorUnitario = ValorUnitario;
+  if (Fornecedor) updateFields.Fornecedor = Fornecedor;
+
+  try {
+    // Atualizar apenas os campos presentes no objeto updateFields
+    await knex('Estoque')
+      .where({ id: idProduto })
+      .update(updateFields);
+
+    res.status(200).json({ message: "Produto atualizado com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao atualizar produto:", error);
+    res.status(500).json({ error: "Erro ao atualizar o produto." });
+  }
+});
+
 
 
 app.listen(3001, () => {
