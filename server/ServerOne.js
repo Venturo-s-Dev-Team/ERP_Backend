@@ -382,9 +382,23 @@ app.get(`/tableEstoque/:id`, async (req, res) => {
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
     const estoqueInfo = await knexInstance('estoque').select('*');
-    res.status(200).send({ InfoTabela: estoqueInfo });
+    res.status(200).send({ InfoTabela: estoqueInfo, N_Registros: estoqueInfo.length });
   } catch (error) {
     console.error('Erro ao buscar informações da tabela Estoque:', error);
+    res.status(500).send({ message: 'Erro ao buscar informações da tabela Estoque' });
+  }
+});
+
+// VENDAS
+app.get(`/tableVenda/:id`, async (req, res) => {
+  const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const vendaINFO = await knexInstance('venda').select('*');
+    res.status(200).send({ InfoTabela: vendaINFO, N_Registros: vendaINFO.length });
+  } catch (error) {
+    console.error('Erro ao buscar informações da tabela Venda:', error);
     res.status(500).send({ message: 'Erro ao buscar informações da tabela Estoque' });
   }
 });
@@ -445,30 +459,30 @@ app.get(`/tableCliente/:id`, async (req, res) => {
   }
 });
 
+// Rota para obter informações da tabela Cliente
+app.get(`/tableFornecedor/:id`, async (req, res) => {
+  const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const response = await knexInstance('fornecedor').select('*');
+    res.status(200).send(response)
+  } catch (error) {
+    console.error('Erro ao buscar informações da tabela Estoque:', error);
+    res.status(500).send({ message: 'Erro ao buscar informações da tabela Estoque' });
+  }
+});
+
 app.get('/tableFuncionario/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
     const funcionarioInfo = await knexInstance('funcionario').select('*');
-    res.status(200).send({ InfoTabela: funcionarioInfo });
+    res.status(200).send({ InfoTabela: funcionarioInfo, N_Registros: funcionarioInfo.length });
   } catch (error) {
     console.error('Erro ao buscar informações da tabela Funcionários:', error);
     res.status(500).send({ message: 'Erro ao buscar informações da tabela Funcionário' });
-  }
-})
-
-//VENDAS
-app.get('/tableVendas/:id', async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const funcionarioInfo = await knexInstance('venda').select('*');
-    res.status(200);
-  } catch (error) {
-    console.error('Erro ao buscar informações da tabela Vendas:', error);
-    res.status(500).send({ message: 'Erro ao buscar informações da tabela Vendas' });
   }
 })
 
@@ -557,6 +571,7 @@ CREATE TABLE cliente (
   cidade VARCHAR(100),
   cep VARCHAR(10),
   uf VARCHAR(2),
+  endereco varchar(255),
   email VARCHAR(255),
   autorizados TEXT ,
   observacoes TEXT,
@@ -572,12 +587,24 @@ CREATE TABLE cliente (
   celular VARCHAR(20)
 );
 
--- Criação da tabela fornecedor
-CREATE TABLE IF NOT EXISTS fornecedor (
+CREATE TABLE fornecedor (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  Nome VARCHAR(255) NOT NULL,
-  CNPJ VARCHAR(18) NOT NULL UNIQUE,
-  Enderecoid INT
+  razao_social VARCHAR(255),
+  nome_fantasia VARCHAR(255),
+  logradouro VARCHAR(255),
+  bairro VARCHAR(100),
+  cidade VARCHAR(100),
+  cep VARCHAR(10),
+  uf VARCHAR(2),
+  endereco varchar(255),
+  email VARCHAR(255),
+  observacoes TEXT,
+  ramo_atividade VARCHAR(255) ,
+  site VARCHAR(255),
+  cpf_cnpj VARCHAR(18) ,
+  ie VARCHAR(12),
+  telefone VARCHAR(20),
+  celular VARCHAR(20)
 );
 
 CREATE TABLE estoque (
@@ -796,32 +823,82 @@ app.put('/tableDespesasNaoFinalizado/:id', async (req, res) => {
   }
 });
 
-// ESTOQUE
-app.put('updateProduct/:id', async (req, res) => {
-  const { idProduto } = req.params;
-  const { Nome, Quantidade, ValorUnitario, Fornecedor,} = req.body;
-
-  // Objeto de atualização que conterá somente os campos não nulos
-  const updateFields = {};
-
-  if (Nome) updateFields.Nome = Nome;
-  if (Quantidade) updateFields.Quantidade = Quantidade;
-  if (ValorUnitario) updateFields.ValorUnitario = ValorUnitario;
-  if (Fornecedor) updateFields.Fornecedor = Fornecedor;
-
-  try {
-    // Atualizar apenas os campos presentes no objeto updateFields
-    await knex('Estoque')
-      .where({ id: idProduto })
-      .update(updateFields);
-
-    res.status(200).json({ message: "Produto atualizado com sucesso!" });
-  } catch (error) {
-    console.error("Erro ao atualizar produto:", error);
-    res.status(500).json({ error: "Erro ao atualizar o produto." });
+// Configurando o Multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/ProdutosIMG');  // Diretório onde os arquivos serão armazenados
+  },
+  filename: (req, file, cb) => {
+    // Obter a hora atual e o nome original do arquivo
+    const timestamp = Date.now();  // Pega o timestamp atual
+    const originalName = file.originalname.replace(/\s+/g, '_');  // Remove espaços do nome original
+    const fileExtension = path.extname(originalName);  // Extensão do arquivo original
+    
+    // Definir o novo nome do arquivo como "timestamp_nomeoriginal.ext"
+    const newFileName = `${timestamp}_${path.basename(originalName, fileExtension)}${fileExtension}`;
+    
+    cb(null, newFileName);  // Salva o arquivo no servidor com o nome gerado
   }
 });
 
+// Filtro para permitir apenas imagens
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = /jpeg|jpg|png|gif/;
+  const extName = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimeType = allowedTypes.test(file.mimetype);
+  
+  if (extName && mimeType) {
+    cb(null, true);
+  } else {
+    cb(new Error('Tipo de arquivo não suportado. Apenas imagens são permitidas.'));
+  }
+};
+
+// Configuração final do Multer
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter
+});
+
+// ESTOQUE
+app.put('/updateProduct/:id', upload.single('Imagem'), async (req, res) => {
+  try {
+    // Verifica se os dados foram recebidos corretamente
+    const { Nome, Quantidade, ValorUnitario, Fornecedor, Tamanho, database_id } = req.body;
+    const imagem = req.file ? req.file.path : null;
+    const id = req.params.id;
+
+    // Log para depuração
+    console.log('Dados recebidos:', req.body);
+    console.log('Imagem recebida:', imagem);
+
+    // Lógica para atualizar o produto no banco de dados
+    const updatedData = {
+      Nome,
+      Quantidade,
+      ValorUnitario,
+      Fornecedor,
+      Tamanho,
+    };
+
+    // Atualiza a imagem somente se houver uma nova imagem enviada
+if (req.file) {
+  updatedData.Imagem = req.file.filename;  // Salva apenas o nome do arquivo no banco de dados
+}
+
+    const knexInstance = createEmpresaKnexConnection(`empresa_${database_id}`);
+
+    // Atualiza o produto no banco de dados
+    await knexInstance('estoque')
+      .where({ Codigo: id })
+      .update(updatedData);
+
+    return res.status(200).json({ message: 'Produto atualizado com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao atualizar produto:', error);
+    return res.status(500).json({ message: 'Erro ao atualizar produto.' });
+  }
+});
 
 
 app.listen(3001, () => {

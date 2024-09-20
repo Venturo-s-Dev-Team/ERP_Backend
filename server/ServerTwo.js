@@ -475,6 +475,7 @@ app.post(`/registerCliente`, async (req, res) => {
     cidade,
     cep,
     uf,
+    endereco,
     email, 
     telefone,
     ativo,
@@ -499,6 +500,7 @@ app.post(`/registerCliente`, async (req, res) => {
       cidade,
       cep,
       uf,
+      endereco,
       email, 
       telefone,
       ativo,
@@ -518,21 +520,56 @@ app.post(`/registerCliente`, async (req, res) => {
 });
 
 //FORNECEDORES
-app.post(`/tableFornecedor/:id`, async (req, res) => {
-  const { Nome, CPF_CNPJ, Enderecoid } = req.body;
+app.post("/registerFornecedor", async (req, res) => {
+  const {
+    id_EmpresaDb,
+    razao_social,
+    cpf_cnpj,
+    observacoes,
+    nome_fantasia,
+    logradouro,
+    bairro,
+    cidade,
+    cep,
+    uf,
+    endereco,
+    email,
+    telefone,
+    ie,
+    ramo_atividade,
+    site,
+  } = req.body;
+
   try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const [newId] = await knexInstance('Fornecedor').insert({
-      Nome,
-      CPF_CNPJ,
-      Enderecoid,
+    // Criando conexão com o banco de dados específico da empresa
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+    
+    // Inserindo dados do fornecedor na tabela 'fornecedor'
+    const [newId] = await knexInstance("fornecedor").insert({
+      razao_social,
+      cpf_cnpj,
+      observacoes,
+      nome_fantasia,
+      logradouro,
+      bairro,
+      cidade,
+      cep,
+      uf,
+      endereco,
+      email,
+      telefone,
+      ie,
+      ramo_atividade,
+      site,
     });
-    res.status(201).send({ id: newId, message: 'Fornecedor registrado com sucesso!' });
+
+    res.status(200).send({ id: newId, message: "Fornecedor registrado com sucesso!" });
   } catch (error) {
-    console.error('Erro ao adicionar Fornecedor na tabela Fornecedor:', error);
-    res.status(500).send({ message: 'Erro ao adicionar For na tabela Clientes' });
+    console.error("Erro ao adicionar Fornecedor:", error);
+    res.status(500).send({ message: "Erro ao adicionar Fornecedor na tabela Fornecedor" });
   }
 });
+
 
 // VENDAS
 app.post(`/tableVenda/:id`, async (req, res) => {
