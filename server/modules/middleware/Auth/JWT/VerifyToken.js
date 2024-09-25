@@ -2,8 +2,8 @@ require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const { mainDb } = require('../../KnexJS/knexfile');
-const { createEmpresaKnexConnection } = require('../../KnexJS/MultiSchemas'); // Supondo que há um helper para conexões
+const { mainDb } = require('../../../KnexJS/knexfile');
+const { createEmpresaKnexConnection } = require('../../../KnexJS/MultiSchemas'); // Supondo que há um helper para conexões
 
 const app = express();
 app.use(express.json());

@@ -14,8 +14,6 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { verifyToken } = require('./modules/middleware/JWT/VerifyToken');
-
 const app = express();
 
 app.use(cookieParser());
@@ -409,8 +407,8 @@ app.get(`/tablepagamentos/:id`, async (req, res) => {
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const estoqueInfo = await knexInstance('pagamentos').select('*');
-    res.status(200).send({ InfoTabela: estoqueInfo });
+    const pagamentoInfo = await knexInstance('pagamentos').select('*');
+    res.status(200).send({ InfoTabela: pagamentoInfo });
   } catch (error) {
     console.error('Erro ao buscar informações da tabela Pagamentos:', error);
     res.status(500).send({ message: 'Erro ao buscar informações da tabela Pagamentos' });
@@ -486,6 +484,35 @@ app.get('/tableFuncionario/:id', async (req, res) => {
   }
 })
 
+// Rota para obter informações da tabela Impostos
+app.get(`/tableImpostos/:id`, async (req, res) => {
+  const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const response = await knexInstance('impostos').select('*');
+    res.status(200).send(response)
+  } catch (error) {
+    console.error('Erro ao buscar informações da tabela Impostos:', error);
+    res.status(500).send({ message: 'Erro ao buscar informações da tabela Impostos' });
+  }
+});
+
+
+// Rota para obter informações da tabela Planos
+app.get(`/tablePlanos/:id`, async (req, res) => {
+  const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const response = await knexInstance('planos').select('*');
+    res.status(200).send(response)
+  } catch (error) {
+    console.error('Erro ao buscar informações da tabela planos:', error);
+    res.status(500).send({ message: 'Erro ao buscar informações da tabela planos' });
+  }
+});
+
 // UPDATES
 
 app.get('/autorizar/:id', async (req, res) => {
@@ -550,15 +577,30 @@ CREATE TABLE notafiscal (
 );
 
 CREATE TABLE venda (
-  id_venda INT AUTO_INCREMENT PRIMARY KEY,
+  id_venda INT,
+  id_produto INT AUTO_INCREMENT PRIMARY KEY,
   nome_cliente VARCHAR(100),       -- Nome do cliente
   produto VARCHAR(100),            -- Nome do produto
-  quantidade INT,                  -- Quantidade do produto
   desconto DECIMAL(10, 2),         -- Desconto aplicado
   forma_pagamento VARCHAR(50),     -- Forma de pagamento (Ex: Cartão, Boleto)
   total DECIMAL(10, 2),            -- Valor total da venda
   garantia VARCHAR(50),            -- Garantia oferecida (Ex: 1 ano, 6 meses)
   vendedor VARCHAR(100)            -- Nome do vendedor
+);
+
+CREATE TABLE planos (
+  codigo_plano VARCHAR(50) PRIMARY KEY,
+  descricao VARCHAR(255) NOT NULL,
+  mascara VARCHAR(50) NOT NULL
+);
+
+
+CREATE TABLE contas (
+  codigo_reduzido VARCHAR(50) PRIMARY KEY,
+  descricao VARCHAR(255) NOT NULL,
+  mascara VARCHAR(50) NOT NULL,
+  orientacao ENUM('Crédito', 'Débito', 'Ambos') NOT NULL,
+  tipo ENUM('Sintética', 'Analítica') NOT NULL
 );
 
 
@@ -633,13 +675,40 @@ CREATE TABLE contas (
   Tipo VARCHAR(50) NOT NULL
 );
 
+CREATE TABLE Impostos (
+  uf VARCHAR(2) PRIMARY KEY,  -- Código da UF com 2 caracteres
+  aliquota DECIMAL(5, 2) NOT NULL,  -- Alíquota com até 5 dígitos, 2 casas decimais
+  tipo ENUM('ICMS', 'ISS', 'PIS', 'COFINS', 'OUTRO') NOT NULL  -- Tipos de impostos
+);
+
+CREATE TABLE lancamento_contabil (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  mes_ano DATE NOT NULL,
+  lancamento INT NOT NULL,
+  lote VARCHAR(50) NOT NULL,
+  unidade_negocio VARCHAR(100) NOT NULL,
+  data_movimento DATE NOT NULL,
+  documento VARCHAR(100),
+  tipo_documento VARCHAR(50),
+  debito_valor DECIMAL(10, 2) NOT NULL,
+  debito_tipo ENUM('ativo', 'passivo') NOT NULL,
+  debito_conta ENUM('bancos_cta_movimento', 'outra_conta') NOT NULL,
+  credito_valor DECIMAL(10, 2) NOT NULL,
+  credito_tipo ENUM('ativo', 'passivo') NOT NULL,
+  credito_conta ENUM('bancos_cta_movimento', 'outra_conta') NOT NULL,
+  transacao_valor DECIMAL(10, 2) NOT NULL,
+  empresa VARCHAR(100) NOT NULL,
+  empresa_valor DECIMAL(10, 2) NOT NULL,
+  codigo_historico INT NOT NULL,
+  historico_completo TEXT NOT NULL
+);
+
 CREATE TABLE transacoes (
   id INT AUTO_INCREMENT PRIMARY KEY,
   ContaId INT NOT NULL,
   Data DATE NOT NULL,
   Valor DECIMAL(15, 2) NOT NULL,
-  Tipo VARCHAR(50) NOT NULL,
-  FOREIGN KEY (ContaId) REFERENCES contas(id)
+  Tipo VARCHAR(50) NOT NULL
 );
 
 CREATE TABLE pagamentos (
@@ -649,8 +718,7 @@ CREATE TABLE pagamentos (
   Data DATE NOT NULL,
   Conta INT NOT NULL,
   TipoPagamento VARCHAR(50), 
-  Descricao TEXT,             
-  FOREIGN KEY (Conta) REFERENCES contas(id)
+  Descricao TEXT
 );
 
       `;

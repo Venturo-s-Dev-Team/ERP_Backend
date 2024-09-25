@@ -8,7 +8,7 @@ const { createEmpresaKnexConnection } = require('./modules/KnexJS/MultiSchemas')
 const { checkIfDatabaseExists } = require('./modules/middleware/MYSQL/CheckIfDatabaseExists') // Verifica se tem um banco de dados existente
 const { copyDatabase } = require('./modules/Functions/MYSQL/CopyDatabase'); // Copia o banco de dados
 const { createConnection } = require('./modules/KnexJS/CreateConnectionMultipleStatements'); // Cria uma conexxão sql MultipleStatements = true
-const { verifyToken } = require('./modules/middleware/JWT/VerifyToken')
+const { verifyToken } = require('./modules/middleware/Auth/JWT/VerifyToken')
 const { logAction } = require('./modules/Functions/LOGS/LogAction_db'); // Função de Logs
 const { logActionEmpresa } = require('./modules/Functions/LOGS/LogAction_db_empresas');
 const cookieParser = require('cookie-parser');
@@ -630,6 +630,91 @@ app.post(`/registrarReceitas`, async (req, res) => {
     res.status(500).send({ message: 'Erro ao adicionar For na tabela receitas' });
   }
 });
+
+//PAGAMENTOS
+app.post(`/registrarPagamento`, async (req, res) => {
+  const { Valor, Nome, Data, Conta, TipoPagamento, Descricao, id_EmpresaDb, userName, userId } = req.body;
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+    const [newId] = await knexInstance('pagamentos').insert({
+      Valor,
+      Nome,
+      Data,
+      Conta,
+      TipoPagamento,
+      Descricao,
+    });
+    await logActionEmpresa(id_EmpresaDb, userId, userName, `Registrou uma despesa com o nome: ${Nome}`, `empresa_${id_EmpresaDb}.despesas`)
+    res.status(201).send({ id: newId, message: 'despesa registrada com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao adicionar despesa na tabela despesa:', error);
+    res.status(500).send({ message: 'Erro ao adicionar For na tabela despesa' });
+  }
+});
+
+//IMPOSTOS
+app.post(`/registrarImpostos`, async (req, res) => {
+  const { uf, aliquota, tipo, id_EmpresaDb, userId, userName } = req.body;
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+    const [newId] = await knexInstance('impostos').insert({
+      uf,
+      aliquota,
+      tipo,
+    });
+
+    await logActionEmpresa(id_EmpresaDb, userId, userName, `Registrou uma receita com o nome: ${Nome}`, `empresa_${id_EmpresaDb}.receitas`)
+    res.status(201).send({ id: newId, message: 'receita registrada com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao adicionar receita na tabela receita:', error);
+    res.status(500).send({ message: 'Erro ao adicionar For na tabela receitas' });
+  }
+});
+
+
+//PLANOS
+app.post(`/registrarPlanos`, async (req, res) => {
+  const { codigo_plano, descricao, marscara, id_EmpresaDb, userId, userName } = req.body;
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+    const [newId] = await knexInstance('planos').insert({
+      codigo_plano,
+      descricao,
+      mascara,
+    });
+
+    await logActionEmpresa(id_EmpresaDb, userId, userName, `Registrou um plano com o nome: ${Nome}`, `empresa_${id_EmpresaDb}.receitas`)
+    res.status(201).send({ id: newId, message: 'plano registrada com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao adicionar plano na tabela receita:', error);
+    res.status(500).send({ message: 'Erro ao adicionar For na tabela planos' });
+  }
+});
+
+
+
+//CONTAS
+app.post(`/registrarContas`, async (req, res) => {
+  const { codigo_reduzido, descricao, marscara, orientacao, tipo, id_EmpresaDb, userId, userName } = req.body;
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+    const [newId] = await knexInstance('contas').insert({
+      codigo_reduzido,
+      descricao,
+      mascara,
+      orientacao,
+      tipo,
+    });
+
+    await logActionEmpresa(id_EmpresaDb, userId, userName, `Registrou um plano com o nome: ${Nome}`, `empresa_${id_EmpresaDb}.receitas`)
+    res.status(201).send({ id: newId, message: 'plano registrada com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao adicionar plano na tabela receita:', error);
+    res.status(500).send({ message: 'Erro ao adicionar For na tabela planos' });
+  }
+});
+
 
 // GET
 
