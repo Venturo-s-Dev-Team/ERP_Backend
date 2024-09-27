@@ -572,19 +572,16 @@ app.post("/registerFornecedor", async (req, res) => {
 
 
 // VENDAS
-app.post(`/tableVenda/:id`, async (req, res) => {
-  const { nome_cliente, produto, quantidade, desconto, forma_pagamento, total, garantia, vendedor } = req.body;
+app.post(`/registrarPedido/:id`, async (req, res) => {
+  const { nome_cliente, produto, desconto, total, vendedor } = req.body;
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${req.params.id}`);
     const [newId] = await knexInstance('venda').insert({
       nome_cliente,
       produto,
-      quantidade,
       desconto,
-      forma_pagamento,
       total,
-      garantia,
-      vendedor,
+      vendedor
     });
     res.status(201).send({ id: newId, message: 'Venda registrada com sucesso!' });
   } catch (error) {
@@ -672,33 +669,56 @@ app.post(`/registrarImpostos`, async (req, res) => {
   }
 });
 
+// REGISTRO PLANOS
+app.post(`/registrarPlanos/:id`, upload.none(), async (req, res) => {
+  const { id } = req.params;
+  const {
+    codigo_plano,
+    descricao,
+    mascara,
+    userId,
+    userName,
+  } = req.body;
 
-//PLANOS
-app.post(`/registrarPlanos`, async (req, res) => {
-  const { codigo_plano, descricao, marscara, id_EmpresaDb, userId, userName } = req.body;
+  // Debugging log
+  console.log('Dados recebidos:', req.body);
+
   try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
     const [newId] = await knexInstance('planos').insert({
       codigo_plano,
       descricao,
       mascara,
     });
 
-    await logActionEmpresa(id_EmpresaDb, userId, userName, `Registrou um plano com o nome: ${Nome}`, `empresa_${id_EmpresaDb}.receitas`)
-    res.status(201).send({ id: newId, message: 'plano registrada com sucesso!' });
+    await logActionEmpresa(id, userId, userName, `Registrou uma conta com o ID: ${newId}`, `empresa_${id}.conta`);
+
+    res.status(201).send({ id: newId, message: 'Conta registrada com sucesso!' });
   } catch (error) {
-    console.error('Erro ao adicionar plano na tabela receita:', error);
-    res.status(500).send({ message: 'Erro ao adicionar For na tabela planos' });
+    console.error('Erro ao adicionar transação na tabela Contas:', error);
+    res.status(500).send({ message: 'Erro ao adicionar conta na tabela' });
   }
 });
 
 
+// REGISTRO CONTAS
+app.post(`/registrarContas/:id`, upload.none(), async (req, res) => {
+  const { id } = req.params;
+  const {
+    codigo_reduzido,
+    descricao,
+    mascara,
+    orientacao,
+    tipo,
+    userId,
+    userName,
+  } = req.body;
 
-//CONTAS
-app.post(`/registrarContas`, async (req, res) => {
-  const { codigo_reduzido, descricao, marscara, orientacao, tipo, id_EmpresaDb, userId, userName } = req.body;
+  // Debugging log
+  console.log('Dados recebidos:', req.body);
+
   try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
     const [newId] = await knexInstance('contas').insert({
       codigo_reduzido,
       descricao,
@@ -707,14 +727,76 @@ app.post(`/registrarContas`, async (req, res) => {
       tipo,
     });
 
-    await logActionEmpresa(id_EmpresaDb, userId, userName, `Registrou um plano com o nome: ${Nome}`, `empresa_${id_EmpresaDb}.receitas`)
-    res.status(201).send({ id: newId, message: 'plano registrada com sucesso!' });
+    await logActionEmpresa(id, userId, userName, `Registrou uma conta com o ID: ${newId}`, `empresa_${id}.conta`);
+
+    res.status(201).send({ id: newId, message: 'Conta registrada com sucesso!' });
   } catch (error) {
-    console.error('Erro ao adicionar plano na tabela receita:', error);
-    res.status(500).send({ message: 'Erro ao adicionar For na tabela planos' });
+    console.error('Erro ao adicionar transação na tabela Contas:', error);
+    res.status(500).send({ message: 'Erro ao adicionar conta na tabela' });
   }
 });
 
+
+// REGISTRO CONTÁBIL
+app.post(`/registroContabil/:id`, upload.none(), async (req, res) => {
+  const { id } = req.params;
+  const {
+    mes_ano,
+    lancamento,
+    lote,
+    unidade_negocio,
+    data,
+    documento,
+    tipo_documento,
+    debito_valor,
+    debito_tipo,
+    debito_conta,
+    credito_valor,
+    credito_tipo,
+    credito_conta,
+    transacao,
+    empresa,
+    valor_empresa,
+    codigo_historico,
+    historico_completo,
+    userId,
+    userName,
+  } = req.body;
+
+  // Debugging log
+  console.log('Dados recebidos:', req.body);
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const [newId] = await knexInstance('lancamento_contabil').insert({
+      mes_ano,
+      lancamento,
+      lote,
+      unidade_negocio,
+      data_movimento: data, // Altere aqui se necessário
+      documento,
+      tipo_documento,
+      debito_valor,
+      debito_tipo,
+      debito_conta,
+      credito_valor,
+      credito_tipo,
+      credito_conta,
+      transacao_valor: transacao, // Altere aqui se necessário
+      empresa,
+      empresa_valor: valor_empresa, // Altere aqui se necessário
+      codigo_historico,
+      historico_completo,
+    });
+
+    await logActionEmpresa(id, userId, userName, `Registrou uma transação com o ID: ${newId}`, `empresa_${id}.transacoes`);
+
+    res.status(201).send({ id: newId, message: 'Transação registrada com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao adicionar transação na tabela lancamento_contabil:', error);
+    res.status(500).send({ message: 'Erro ao adicionar transação na tabela' });
+  }
+});
 
 // GET
 
@@ -746,6 +828,38 @@ app.get('/MainHistoricLogs', async (req, res) => {
   }
 });
 
+
+// GET
+
+// Historic Logs na Database da empresa 
+app.get('/EmpresaHistoricLogs/:id', async (req, res) => {
+  const id_EmpresaDb = req.params.id;  // Fixed variable name
+  const { page = 1, limit = 10, year, month } = req.query;  // Default limit to 10
+  const offset = (page - 1) * limit;
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+    let query = knexInstance('historicologs').select('*').limit(limit).offset(offset).orderBy('timestamp', 'desc');
+
+    if (year) {
+      query = query.whereRaw('YEAR(timestamp) = ?', [year]);
+    }
+
+    if (month) {
+      query = query.whereRaw('MONTH(timestamp) = ?', [month]);
+    }
+
+    const logs = await query;
+    const totalLogs = await knexInstance('historicologs').count('* as count').first();
+    const totalPages = Math.ceil(totalLogs.count / limit);
+
+    res.status(200).json({ logs, currentPage: page, totalPages });
+    console.log('Requisição do log efetuada com sucesso');
+  } catch (err) {
+    console.error('Erro ao buscar logs:', err);
+    res.status(500).send('Erro ao buscar logs');
+  }
+});
 
 
 app.listen(3002, () => {

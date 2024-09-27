@@ -415,6 +415,26 @@ app.get(`/tablepagamentos/:id`, async (req, res) => {
   }
 });
 
+// Rota para obter informações da tabela planos
+app.get(`/tablePlanos/:id`, async (req, res) => {
+  const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  try {
+    // Criando a conexão com o banco de dados da empresa específica
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+
+    // Obtendo os dados da tabela 'planos'
+    const planosInfo = await knexInstance('planos').select('*');
+
+    // Retornando a resposta com os dados obtidos
+    res.status(200).send({ InfoTabela: planosInfo });
+  } catch (error) {
+    console.error('Erro ao buscar informações da tabela Planos:', error);
+    res.status(500).send({ message: 'Erro ao buscar informações da tabela Planos' });
+  }
+});
+
+
 // Rota para obter informações da tabela Receitas
 app.get(`/tablereceitas/:id`, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
@@ -513,6 +533,20 @@ app.get(`/tablePlanos/:id`, async (req, res) => {
   }
 });
 
+// Rota para obter informações da tabela Planos
+app.get(`/tableContas/:id`, async (req, res) => {
+  const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const response = await knexInstance('contas').select('*');
+    res.status(200).send(response)
+  } catch (error) {
+    console.error('Erro ao buscar informações da tabela Contas:', error);
+    res.status(500).send({ message: 'Erro ao buscar informações da tabela Contas' });
+  }
+});
+
 // UPDATES
 
 app.get('/autorizar/:id', async (req, res) => {
@@ -580,7 +614,7 @@ CREATE TABLE venda (
   id_venda INT,
   id_produto INT AUTO_INCREMENT PRIMARY KEY,
   nome_cliente VARCHAR(100),       -- Nome do cliente
-  produto VARCHAR(100),            -- Nome do produto
+  produto TEXT,            -- Nome do produto
   desconto DECIMAL(10, 2),         -- Desconto aplicado
   forma_pagamento VARCHAR(50),     -- Forma de pagamento (Ex: Cartão, Boleto)
   total DECIMAL(10, 2),            -- Valor total da venda
@@ -667,12 +701,6 @@ CREATE TABLE historicologs (
   action VARCHAR(255) NOT NULL,
   table_name VARCHAR(255) NOT NULL,
   timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE contas (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  Nome VARCHAR(255) NOT NULL,
-  Tipo VARCHAR(50) NOT NULL
 );
 
 CREATE TABLE Impostos (
@@ -849,6 +877,27 @@ app.put(`/tableVendasUp/:id`, async (req, res) => {
   } catch (error) {
     console.error('Erro ao atualizar Venda na tabela Vendas:', error);
     res.status(500).send({ message: 'Erro ao atualizar Venda na tabela Vendas' });
+  }
+});
+
+//CONTAS
+app.put(`/tableContasUp/:id`, async (req, res) => {
+  const { id } = req.params; // Obtendo o ID da empresa da rota
+  const { codigo_reduzido, descricao, mascara, orientacao, tipo } = req.body;
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const [newId] = await knexInstance('contas').insert({
+      codigo_reduzido,
+      descricao,
+      mascara,
+      orientacao,
+      tipo,
+    });
+    res.status(201).send({ id: newId, message: 'Registro de Contas atualizado com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao atualizar Conta na tabela Contas:', error);
+    res.status(500).send({ message: 'Erro ao atualizar Conta na tabela Contas' });
   }
 });
 
