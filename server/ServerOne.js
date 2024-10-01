@@ -612,7 +612,7 @@ CREATE TABLE notafiscal (
 
 CREATE TABLE venda (
   id_venda INT,
-  id_produto INT AUTO_INCREMENT PRIMARY KEY,
+  id_pedido INT AUTO_INCREMENT PRIMARY KEY,
   nome_cliente VARCHAR(100),       -- Nome do cliente
   produto TEXT,            -- Nome do produto
   desconto DECIMAL(10, 2),         -- Desconto aplicado
@@ -658,7 +658,7 @@ CREATE TABLE cliente (
   site VARCHAR(255),
   ativo ENUM('SIM', 'NÃO'),
   cpf_cnpj VARCHAR(18) ,
-  ie VARCHAR(12),
+  ie VARCHAR(20),
   telefone VARCHAR(20),
   celular VARCHAR(20)
 );

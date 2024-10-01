@@ -442,7 +442,7 @@ app.post('/RegistrarProduto/:id', (req, res) => {
 
     try {
       const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-      const [newId] = await knexInstance('Estoque').insert({
+      const [newId] = await knexInstance('estoque').insert({
         Nome,
         Quantidade,
         ValorUnitario,
