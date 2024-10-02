@@ -415,25 +415,6 @@ app.get(`/tablepagamentos/:id`, async (req, res) => {
   }
 });
 
-// Rota para obter informações da tabela planos
-app.get(`/tablePlanos/:id`, async (req, res) => {
-  const { id } = req.params; // Obtendo o ID da empresa da rota
-
-  try {
-    // Criando a conexão com o banco de dados da empresa específica
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-
-    // Obtendo os dados da tabela 'planos'
-    const planosInfo = await knexInstance('planos').select('*');
-
-    // Retornando a resposta com os dados obtidos
-    res.status(200).send({ InfoTabela: planosInfo });
-  } catch (error) {
-    console.error('Erro ao buscar informações da tabela Planos:', error);
-    res.status(500).send({ message: 'Erro ao buscar informações da tabela Planos' });
-  }
-});
-
 
 // Rota para obter informações da tabela Receitas
 app.get(`/tablereceitas/:id`, async (req, res) => {
@@ -533,17 +514,23 @@ app.get(`/tablePlanos/:id`, async (req, res) => {
   }
 });
 
-// Rota para obter informações da tabela Planos
-app.get(`/tableContas/:id`, async (req, res) => {
-  const { id } = req.params; // Obtendo o ID da empresa da rota
+// Rota para obter contas filtradas pela orientação (débito, crédito ou ambos)
+app.get(`/tableContas/:id/:orientacao`, async (req, res) => {
+  const { id, orientacao } = req.params; // Obtendo o ID da empresa e a orientação da rota
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const response = await knexInstance('contas').select('*');
-    res.status(200).send(response)
+    
+    // Consultando a tabela de contas com base na orientação
+    const response = await knexInstance('contas')
+      .select('*')
+      .where('orientacao', orientacao)
+      .orWhere('orientacao', 'Ambos'); // Inclui as contas com orientação 'Ambos'
+
+    res.status(200).send(response);
   } catch (error) {
-    console.error('Erro ao buscar informações da tabela Contas:', error);
-    res.status(500).send({ message: 'Erro ao buscar informações da tabela Contas' });
+    console.error('Erro ao buscar contas:', error);
+    res.status(500).send({ message: 'Erro ao buscar contas da tabela Contas' });
   }
 });
 

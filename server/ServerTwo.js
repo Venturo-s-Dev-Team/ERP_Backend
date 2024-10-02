@@ -574,21 +574,76 @@ app.post("/registerFornecedor", async (req, res) => {
 // VENDAS
 app.post(`/registrarPedido/:id`, async (req, res) => {
   const { nome_cliente, produto, desconto, total, vendedor } = req.body;
+
+  console.log("Request body:", req.body); // Verificar os dados de entrada
+
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${req.params.id}`);
-    const [newId] = await knexInstance('venda').insert({
-      nome_cliente,
-      produto,
-      desconto,
-      total,
-      vendedor
-    });
-    res.status(201).send({ id: newId, message: 'Venda registrada com sucesso!' });
+
+    // Converter a string JSON em um array de objetos
+    const produtos = JSON.parse(produto);
+
+    console.log("Produtos:", produtos); // Verificar se o array de produtos foi convertido corretamente
+
+    // Iniciar a transação
+    const trx = await knexInstance.transaction();
+
+    try {
+      // Inserir o pedido na tabela "venda"
+      const [newId] = await trx('venda').insert({
+        nome_cliente,
+        produto: JSON.stringify(produtos), // Enviar o produto como JSON
+        desconto,
+        total,
+        vendedor
+      });
+
+      // Processar os produtos um por um
+      for (const item of produtos) {
+        const { Codigo, quantidade } = item;
+
+        console.log("Produto - Codigo:", Codigo, "Quantidade:", quantidade); // Verificar valores de Codigo e quantidade
+
+        // Verificar se o produto existe no estoque
+        const estoqueAtual = await trx('estoque')
+          .where('Codigo', Codigo)
+          .select('Quantidade')
+          .first();
+
+        if (!estoqueAtual) {
+          throw new Error(`Produto com Codigo: ${Codigo} não encontrado.`);
+        }
+
+        // Verificar se há quantidade suficiente no estoque
+        if (estoqueAtual.Quantidade < quantidade) {
+          throw new Error(`Estoque insuficiente para o produto ID: ${Codigo}`);
+        }
+
+        // Subtrair a quantidade utilizada do estoque
+        await trx('estoque')
+          .where('Codigo', Codigo)
+          .update({
+            Quantidade: estoqueAtual.Quantidade - quantidade
+          });
+      }
+
+      // Finalizar a transação
+      await trx.commit();
+      res.status(201).send({ id: newId, message: 'Venda registrada e estoque atualizado com sucesso!' });
+
+    } catch (error) {
+      // Em caso de erro, desfazer todas as alterações (rollback)
+      await trx.rollback();
+      console.error('Erro ao registrar pedido ou atualizar estoque:', error);
+      res.status(500).send({ message: 'Erro ao registrar pedido ou atualizar estoque' });
+    }
+
   } catch (error) {
     console.error('Erro ao adicionar venda na tabela Venda:', error);
     res.status(500).send({ message: 'Erro ao adicionar venda na tabela Venda' });
   }
 });
+
 
 //DESPESAS
 app.post(`/registrarDespesas`, async (req, res) => {
@@ -839,6 +894,7 @@ app.get('/EmpresaHistoricLogs/:id', async (req, res) => {
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+    const lenghtData = knexInstance('historicologs').select('*');
     let query = knexInstance('historicologs').select('*').limit(limit).offset(offset).orderBy('timestamp', 'desc');
 
     if (year) {
@@ -853,7 +909,7 @@ app.get('/EmpresaHistoricLogs/:id', async (req, res) => {
     const totalLogs = await knexInstance('historicologs').count('* as count').first();
     const totalPages = Math.ceil(totalLogs.count / limit);
 
-    res.status(200).json({ logs, currentPage: page, totalPages });
+    res.status(200).json({ logs, currentPage: page, totalPages,  N_Registros: (await lenghtData).length });
     console.log('Requisição do log efetuada com sucesso');
   } catch (err) {
     console.error('Erro ao buscar logs:', err);
