@@ -88,7 +88,7 @@ app.post('/login', async (req, res) => {
 
                     // Gera o token JWT se a senha for válida.
                     const token = jwt.sign(
-                        { id_user: empresa.id, id_EmpresaDb: empresa.id, Nome_user: empresa.Gestor, RazaoSocial: empresa.RazaoSocial, Logo: empresa.Logo, Email: empresa.email, Status: empresa.Autorizado, ValoresNull: ValoresNulosObtidos },
+                        { id_user: empresa.id, id_EmpresaDb: empresa.id, Nome_user: empresa.Gestor, RazaoSocial: empresa.RazaoSocial, Logo: empresa.Logo, Email: empresa.email, Status: empresa.Autorizado, ValoresNull: ValoresNulosObtidos, TypeUser: 'Gestor' },
                         process.env.JWT_SECRET,
                         { expiresIn: '15m' } // Token expira em 15 minutos.
                     );
@@ -792,7 +792,6 @@ app.post(`/registrarContas/:id`, upload.none(), async (req, res) => {
 });
 
 
-// REGISTRO CONTÁBIL
 app.post(`/registroContabil/:id`, upload.none(), async (req, res) => {
   const { id } = req.params;
   const {
@@ -804,10 +803,10 @@ app.post(`/registroContabil/:id`, upload.none(), async (req, res) => {
     documento,
     tipo_documento,
     debito_valor,
-    debito_tipo,
+    debito_tipo, // Certifique-se de que este valor está sendo enviado
     debito_conta,
     credito_valor,
-    credito_tipo,
+    credito_tipo, // Certifique-se de que este valor está sendo enviado
     credito_conta,
     transacao,
     empresa,
@@ -818,9 +817,6 @@ app.post(`/registroContabil/:id`, upload.none(), async (req, res) => {
     userName,
   } = req.body;
 
-  // Debugging log
-  console.log('Dados recebidos:', req.body);
-
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
     const [newId] = await knexInstance('lancamento_contabil').insert({
@@ -828,18 +824,18 @@ app.post(`/registroContabil/:id`, upload.none(), async (req, res) => {
       lancamento,
       lote,
       unidade_negocio,
-      data_movimento: data, // Altere aqui se necessário
+      data_movimento: data,
       documento,
       tipo_documento,
       debito_valor,
-      debito_tipo,
+      debito_tipo, // Debito tipo salvo no banco
       debito_conta,
       credito_valor,
-      credito_tipo,
+      credito_tipo, // Credito tipo salvo no banco
       credito_conta,
-      transacao_valor: transacao, // Altere aqui se necessário
+      transacao_valor: transacao,
       empresa,
-      empresa_valor: valor_empresa, // Altere aqui se necessário
+      empresa_valor: valor_empresa,
       codigo_historico,
       historico_completo,
     });

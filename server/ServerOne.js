@@ -609,15 +609,10 @@ CREATE TABLE venda (
   vendedor VARCHAR(100)            -- Nome do vendedor
 );
 
-CREATE TABLE planos (
-  codigo_plano VARCHAR(50) PRIMARY KEY,
-  descricao VARCHAR(255) NOT NULL,
-  mascara VARCHAR(50) NOT NULL
-);
-
 
 CREATE TABLE contas (
-  codigo_reduzido VARCHAR(50) PRIMARY KEY,
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  codigo_reduzido VARCHAR(50),
   descricao VARCHAR(255) NOT NULL,
   mascara VARCHAR(50) NOT NULL,
   orientacao ENUM('Crédito', 'Débito', 'Ambos') NOT NULL,
@@ -707,10 +702,10 @@ CREATE TABLE lancamento_contabil (
   tipo_documento VARCHAR(50),
   debito_valor DECIMAL(10, 2) NOT NULL,
   debito_tipo ENUM('ativo', 'passivo') NOT NULL,
-  debito_conta ENUM('bancos_cta_movimento', 'outra_conta') NOT NULL,
+  debito_conta VARCHAR(255) NOT NULL,
   credito_valor DECIMAL(10, 2) NOT NULL,
   credito_tipo ENUM('ativo', 'passivo') NOT NULL,
-  credito_conta ENUM('bancos_cta_movimento', 'outra_conta') NOT NULL,
+  credito_conta VARCHAR(255) NOT NULL,
   transacao_valor DECIMAL(10, 2) NOT NULL,
   empresa VARCHAR(100) NOT NULL,
   empresa_valor DECIMAL(10, 2) NOT NULL,
