@@ -453,8 +453,30 @@ app.get(`/tableCliente/:id`, async (req, res) => {
     const response = await knexInstance('cliente').select('*');
     res.status(200).send(response)
   } catch (error) {
-    console.error('Erro ao buscar informações da tabela Estoque:', error);
-    res.status(500).send({ message: 'Erro ao buscar informações da tabela Estoque' });
+    console.error('Erro ao buscar informações da tabela cliente:', error);
+    res.status(500).send({ message: 'Erro ao buscar informações da tabela cliente' });
+  }
+});
+
+// Rota para obter informações de um único cliente
+app.get(`/SelectedCliente/:id`, async (req, res) => {
+  const { id } = req.params;
+  const { razao_social } = req.query; // Mudamos para `razao_social`
+
+  if (!razao_social) {
+    return res.status(400).send({ message: 'Parâmetro razao_social está faltando' });
+  }
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const response = await knexInstance('cliente')
+      .where('razao_social', razao_social) // Corrigido para `razao_social`
+      .select('*'); // Seleciona todas as colunas
+
+    res.status(200).send(response);
+  } catch (err) {
+    console.error('Erro ao buscar informações na tabela cliente:', err);
+    res.status(500).send({ message: 'Erro ao buscar informações da tabela cliente' });
   }
 });
 
