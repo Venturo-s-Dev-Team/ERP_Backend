@@ -401,6 +401,26 @@ app.get(`/tableVenda/:id`, async (req, res) => {
   }
 });
 
+// Vendas em aberto
+app.get('/VendasEmAberto/:id', async (req, res) => {
+  const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+
+    // Consulta para buscar registros onde 'id_venda' não é nulo ou vazio
+    const vendaINFO = await knexInstance('venda')
+      .select('*')
+      .whereNull('id_venda') // Filtra registros onde 'id_venda' é nulo
+
+    res.status(200).send({ InfoTabela: vendaINFO, N_Registros: vendaINFO.length });
+  } catch (error) {
+    console.error('Erro ao buscar informações da tabela Venda:', error);
+    res.status(500).send({ message: 'Erro ao buscar informações da tabela Venda' });
+  }
+});
+
+
 // Rota para obter informações da tabela Pagamentos
 app.get(`/tablepagamentos/:id`, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
@@ -623,6 +643,7 @@ CREATE TABLE venda (
   id_venda INT,
   id_pedido INT AUTO_INCREMENT PRIMARY KEY,
   nome_cliente VARCHAR(100),       -- Nome do cliente
+  cpf_cnpj VARCHAR(18) ,
   produto TEXT,            -- Nome do produto
   desconto DECIMAL(10, 2),         -- Desconto aplicado
   forma_pagamento VARCHAR(50),     -- Forma de pagamento (Ex: Cartão, Boleto)
@@ -639,6 +660,14 @@ CREATE TABLE contas (
   mascara VARCHAR(50) NOT NULL,
   orientacao ENUM('Crédito', 'Débito', 'Ambos') NOT NULL,
   tipo ENUM('Sintética', 'Analítica') NOT NULL
+);
+
+
+CREATE TABLE contas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    codigo_plano VARCHAR(50),
+    descricao VARCHAR(255) NOT NULL,
+    mascara VARCHAR(50) NOT NULL
 );
 
 

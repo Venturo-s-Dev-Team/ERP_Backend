@@ -849,6 +849,64 @@ app.post(`/registroContabil/:id`, upload.none(), async (req, res) => {
   }
 });
 
+// PUT
+
+// Rota para atualizar informações da venda
+app.put('/RegisterVenda/:id_pedido', async (req, res) => {
+  const { id_pedido } = req.params;
+  const { cpf_cnpj, forma_pagamento, valor_total, selectedCliente, id } = JSON.parse(req.body.formData); // Recebe os dados do front-end
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    
+    // 1. Recuperar o valor mais alto de id_venda
+    const maxVenda = await knexInstance('venda')
+      .max('id_venda as maxId')  // Buscar o valor máximo de id_venda
+      .first(); // Pega o primeiro resultado
+    
+    let novoIdVenda = 1; // Se não houver registros, o id_venda começará em 1
+    if (maxVenda && maxVenda.maxId) {
+      novoIdVenda = maxVenda.maxId + 1; // Incrementa o maior valor atual
+    }
+
+    // 2. Atualizar o pedido com o novo id_venda
+    await knexInstance('venda')
+      .where({ id_pedido })
+      .update({
+        id_venda: novoIdVenda,
+        cpf_cnpj,
+        forma_pagamento
+      });
+
+    // 3. Definir o nome da receita
+    const nomeReceita = `Venda: ${novoIdVenda}`;
+
+    // 4. Definir a data de expiração com base no dia de faturamento ou na data atual
+    let dataExpiracao = new Date(); // Por padrão, a data é a data atual
+    if (selectedCliente.dia_para_faturamento) {
+      // Definir a data de expiração com base no dia de faturamento
+      const diaFaturamento = selectedCliente.dia_para_faturamento;
+      dataExpiracao.setDate(diaFaturamento); // Atualiza o dia do mês para o faturamento
+    }
+
+    // 5. Inserir a nova receita na tabela 'receitas'
+    await knexInstance('receitas').insert({
+      Nome: nomeReceita,
+      Valor: valor_total, // O valor da venda
+      DataExpiracao: dataExpiracao // Data de expiração
+    });
+
+    // Enviar uma resposta de sucesso
+    res.status(200).json({ message: 'Venda atualizada e receita registrada com sucesso!', novoIdVenda });
+    
+  } catch (error) {
+    console.error('Erro ao atualizar a venda e registrar a receita:', error);
+    return res.status(500).json({ message: 'Erro ao atualizar a venda e registrar a receita.' });
+  }
+});
+
+
+
 // GET
 
 // Historic Logs na Database principal 
