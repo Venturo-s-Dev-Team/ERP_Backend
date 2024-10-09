@@ -649,7 +649,8 @@ CREATE TABLE venda (
   forma_pagamento VARCHAR(50),     -- Forma de pagamento (Ex: Cartão, Boleto)
   total DECIMAL(10, 2),            -- Valor total da venda
   garantia VARCHAR(50),            -- Garantia oferecida (Ex: 1 ano, 6 meses)
-  vendedor VARCHAR(100)            -- Nome do vendedor
+  vendedor VARCHAR(100),            -- Nome do vendedor
+  Status VARCHAR(15) DEFAULT "ABERTO"
 );
 
 
@@ -663,7 +664,7 @@ CREATE TABLE contas (
 );
 
 
-CREATE TABLE contas (
+CREATE TABLE planos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     codigo_plano VARCHAR(50),
     descricao VARCHAR(255) NOT NULL,
@@ -931,6 +932,20 @@ app.put(`/tableContasUp/:id`, async (req, res) => {
   } catch (error) {
     console.error('Erro ao atualizar Conta na tabela Contas:', error);
     res.status(500).send({ message: 'Erro ao atualizar Conta na tabela Contas' });
+  }
+});
+
+// Rota para obter informações da tabela de lançamento contábil
+app.get(`/tableLancamentoContabil/:id`, async (req, res) => {
+  const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const response = await knexInstance('lancamento_contabil').select('*');
+    res.status(200).send(response);
+  } catch (error) {
+    console.error('Erro ao buscar informações da tabela de lançamento contábil:', error);
+    res.status(500).send({ message: 'Erro ao buscar informações da tabela de lançamento contábil' });
   }
 });
 

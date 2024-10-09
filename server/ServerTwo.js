@@ -644,7 +644,6 @@ app.post(`/registrarPedido/:id`, async (req, res) => {
   }
 });
 
-
 //DESPESAS
 app.post(`/registrarDespesas`, async (req, res) => {
   const { Valor, Nome, DataExpiracao, id_EmpresaDb, userName, userId } = req.body;
@@ -850,6 +849,191 @@ app.post(`/registroContabil/:id`, upload.none(), async (req, res) => {
 });
 
 // PUT
+
+// Função de atualização do pedido
+app.put(`/UpdatePedido/:id`, async (req, res) => {
+  const { id_pedido, nome_cliente, produto, desconto, total, vendedor } = req.body;
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${req.params.id}`);
+    const produtosNovos = JSON.parse(produto); // Converter a string JSON em um array de objetos
+
+    const trx = await knexInstance.transaction();
+
+    try {
+      // Obter o pedido existente
+      const pedidoExistente = await trx('venda').where('id_pedido', id_pedido).first();
+      if (!pedidoExistente) {
+        throw new Error(`Pedido com ID ${id_pedido} não encontrado.`);
+      }
+
+      // Processar os produtos do pedido existente
+      const produtosExistentes = JSON.parse(pedidoExistente.produto);
+
+      // Criar um mapa para fácil acesso das quantidades
+      const mapaProdutosExistentes = {};
+      produtosExistentes.forEach(item => {
+        mapaProdutosExistentes[item.Codigo] = item.quantidade;
+      });
+
+      // Atualizar o pedido na tabela "venda"
+      await trx('venda').where('id_pedido', id_pedido).update({
+        nome_cliente,
+        produto: JSON.stringify(produtosNovos),
+        desconto,
+        total,
+        vendedor
+      });
+
+      // Processar as mudanças de estoque
+      for (const item of produtosNovos) {
+        const { Codigo, quantidade } = item;
+        const quantidadeAnterior = mapaProdutosExistentes[Codigo] || 0;
+
+        // Verificar se o produto existe no estoque
+        const estoqueAtual = await trx('estoque').where('Codigo', Codigo).select('Quantidade').first();
+        if (!estoqueAtual) {
+          throw new Error(`Produto com Codigo: ${Codigo} não encontrado no estoque.`);
+        }
+
+        // Atualizar estoque para produtos que foram adicionados ou atualizados
+        if (quantidade > quantidadeAnterior) {
+          // Produto foi adicionado
+          const diferenca = quantidade - quantidadeAnterior;
+
+          if (estoqueAtual.Quantidade < diferenca) {
+            throw new Error(`Estoque insuficiente para o produto ID: ${Codigo}`);
+          }
+
+          // Subtrair a quantidade do estoque
+          await trx('estoque').where('Codigo', Codigo).update({
+            Quantidade: estoqueAtual.Quantidade - diferenca
+          });
+        } else if (quantidade < quantidadeAnterior) {
+          // Produto foi removido
+          const diferenca = quantidadeAnterior - quantidade;
+
+          // Adicionar a quantidade de volta ao estoque
+          await trx('estoque').where('Codigo', Codigo).update({
+            Quantidade: estoqueAtual.Quantidade + diferenca
+          });
+        }
+      }
+
+      // Remover produtos que foram completamente desmarcados
+      for (const item of produtosExistentes) {
+        const { Codigo } = item;
+        if (!produtosNovos.find(p => p.Codigo === Codigo)) {
+          const quantidadeAnterior = mapaProdutosExistentes[Codigo];
+
+          // Adicionar a quantidade de volta ao estoque
+          const estoqueAtual = await trx('estoque').where('Codigo', Codigo).select('Quantidade').first();
+          await trx('estoque').where('Codigo', Codigo).update({
+            Quantidade: estoqueAtual.Quantidade + quantidadeAnterior
+          });
+        }
+      }
+
+      await trx.commit();
+
+      res.status(200).send({ message: 'Pedido atualizado e estoque ajustado com sucesso!' });
+
+    } catch (error) {
+      await trx.rollback();
+      console.error('Erro ao atualizar pedido ou estoque:', error);
+      res.status(500).send({ message: 'Erro ao atualizar pedido ou estoque' });
+    }
+
+  } catch (error) {
+    console.error('Erro ao atualizar pedido:', error);
+    res.status(500).send({ message: 'Erro ao atualizar pedido' });
+  }
+});
+
+// Rota para cancelar um pedido:
+app.put('/CancelarVenda/:id', async (req, res) => {
+  const { id } = req.params; // ID da empresa
+  const { id_pedido, produto } = req.body; // Recebe o id_pedido e os produtos do front-end
+
+  console.log("Recebido na rota CancelarVenda:", req.body);
+
+  if (!id_pedido || !produto || !Array.isArray(produto)) {
+    return res.status(400).json({ message: 'id_pedido e produto (array) são obrigatórios.' });
+  }
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa${id}`);
+    const produtosCancelados = produto; // Agora já é um array de objetos
+
+    // Iniciar a transação
+    const trx = await knexInstance.transaction();
+
+    try {
+      // 1. Obter o pedido existente
+      const pedidoExistente = await trx('venda')
+        .where({ id_pedido })
+        .first();
+
+      if (!pedidoExistente) {
+        throw new Error(`Pedido com ID ${id_pedido} não encontrado.`);
+      }
+
+      if (pedidoExistente.Status === 'CANCELADA') {
+        throw new Error(`Pedido com ID ${id_pedido} já está cancelado.`);
+      }
+
+      // 2. Atualizar o status do pedido para 'CANCELADA'
+      await trx('venda')
+        .where({ id_pedido })
+        .update({
+          Status: 'CANCELADA'
+        });
+
+      // 3. Restaurar as quantidades dos produtos no estoque
+      for (const item of produtosCancelados) {
+        const { Codigo, quantidade } = item;
+
+        console.log(`Processando produto - Código: ${Codigo}, Quantidade: ${quantidade}`);
+
+        if (!Codigo || typeof quantidade !== 'number') {
+          throw new Error(`Produto inválido: Código ${Codigo}, Quantidade ${quantidade}`);
+        }
+
+        // Verificar se o produto existe no estoque
+        const produtoEstoque = await trx('estoque')
+          .where({ Codigo })
+          .first();
+
+        if (!produtoEstoque) {
+          throw new Error(`Produto com Código ${Codigo} não encontrado no estoque.`);
+        }
+
+        // Atualizar a quantidade no estoque (restaurar)
+        await trx('estoque')
+          .where({ Codigo })
+          .update({
+            Quantidade: produtoEstoque.Quantidade + quantidade
+          });
+
+        console.log(`Atualizado estoque para o produto Código: ${Codigo}. Nova Quantidade: ${produtoEstoque.Quantidade + quantidade}`);
+      }
+
+      // Finalizar a transação
+      await trx.commit();
+      res.status(200).json({ message: 'Pedido cancelado e estoque atualizado com sucesso!' });
+
+    } catch (error) {
+      // Em caso de erro, desfazer a transação
+      await trx.rollback();
+      console.error('Erro ao cancelar pedido ou atualizar estoque:', error);
+      res.status(500).json({ message: `Erro ao cancelar pedido: ${error.message}` });
+    }
+
+  } catch (error) {
+    console.error('Erro na rota de cancelamento:', error);
+    res.status(500).json({ message: 'Erro interno ao processar a solicitação.' });
+  }
+});
 
 // Rota para atualizar informações da venda
 app.put('/RegisterVenda/:id_pedido', async (req, res) => {
