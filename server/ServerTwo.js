@@ -760,6 +760,7 @@ app.post(`/registrarContas/:id`, upload.none(), async (req, res) => {
   const { id } = req.params;
   const {
     codigo_reduzido,
+    plano,
     descricao,
     mascara,
     orientacao,
@@ -775,6 +776,7 @@ app.post(`/registrarContas/:id`, upload.none(), async (req, res) => {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
     const [newId] = await knexInstance('contas').insert({
       codigo_reduzido,
+      plano,
       descricao,
       mascara,
       orientacao,
@@ -957,14 +959,30 @@ app.put('/CancelarVenda/:id', async (req, res) => {
 
   console.log("Recebido na rota CancelarVenda:", req.body);
 
-  if (!id_pedido || !produto || !Array.isArray(produto)) {
-    return res.status(400).json({ message: 'id_pedido e produto (array) são obrigatórios.' });
+  if (!id_pedido || !produto) {
+    return res.status(400).json({ message: 'id_pedido e produto são obrigatórios.' });
+  }
+
+  let produtosCancelados;
+  if (typeof produto === 'string') {
+    try {
+      produtosCancelados = JSON.parse(produto);
+    } catch (e) {
+      console.error("Erro ao parsear 'produto' como JSON:", e);
+      return res.status(400).json({ message: 'Formato inválido para produto.' });
+    }
+  } else if (Array.isArray(produto)) {
+    produtosCancelados = produto;
+  } else {
+    return res.status(400).json({ message: 'Formato inválido para produto.' });
+  }
+
+  if (!Array.isArray(produtosCancelados)) {
+    return res.status(400).json({ message: 'produto deve ser um array.' });
   }
 
   try {
-    const knexInstance = createEmpresaKnexConnection(`empresa${id}`);
-    const produtosCancelados = produto; // Agora já é um array de objetos
-
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
     // Iniciar a transação
     const trx = await knexInstance.transaction();
 
@@ -1059,7 +1077,8 @@ app.put('/RegisterVenda/:id_pedido', async (req, res) => {
       .update({
         id_venda: novoIdVenda,
         cpf_cnpj,
-        forma_pagamento
+        forma_pagamento,
+        Status: "VENDA CONCLUÍDA"
       });
 
     // 3. Definir o nome da receita

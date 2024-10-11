@@ -408,10 +408,11 @@ app.get('/VendasEmAberto/:id', async (req, res) => {
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
 
-    // Consulta para buscar registros onde 'id_venda' não é nulo ou vazio
+    // Consulta para buscar registros onde 'id_venda' é nulo e 'Status' não é 'CANCELADO'
     const vendaINFO = await knexInstance('venda')
       .select('*')
       .whereNull('id_venda') // Filtra registros onde 'id_venda' é nulo
+      .andWhereNot('Status', '=', 'CANCELADA'); // Filtra registros onde 'Status' não é 'CANCELADO'
 
     res.status(200).send({ InfoTabela: vendaINFO, N_Registros: vendaINFO.length });
   } catch (error) {
@@ -419,7 +420,6 @@ app.get('/VendasEmAberto/:id', async (req, res) => {
     res.status(500).send({ message: 'Erro ao buscar informações da tabela Venda' });
   }
 });
-
 
 // Rota para obter informações da tabela Pagamentos
 app.get(`/tablepagamentos/:id`, async (req, res) => {
@@ -556,18 +556,21 @@ app.get(`/tablePlanos/:id`, async (req, res) => {
   }
 });
 
-// Rota para obter contas filtradas pela orientação (débito, crédito ou ambos)
-app.get(`/tableContas/:id/:orientacao`, async (req, res) => {
-  const { id, orientacao } = req.params; // Obtendo o ID da empresa e a orientação da rota
+// Rota para obter contas filtradas pela orientação (débito, crédito ou ambos) e pelo plano
+app.get(`/tableContas/:id/:plano/:orientacao`, async (req, res) => {
+  const { id, plano, orientacao } = req.params; // Obtendo o ID da empresa, plano e a orientação da rota
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
     
-    // Consultando a tabela de contas com base na orientação
+    // Consultando a tabela de contas com base na orientação e no plano
     const response = await knexInstance('contas')
       .select('*')
-      .where('orientacao', orientacao)
-      .orWhere('orientacao', 'Ambos'); // Inclui as contas com orientação 'Ambos'
+      .where('plano', plano) // Filtrando pelo plano
+      .andWhere(function() {
+        this.where('orientacao', orientacao)
+            .orWhere('orientacao', 'Ambos');
+      });
 
     res.status(200).send(response);
   } catch (error) {
@@ -656,6 +659,7 @@ CREATE TABLE venda (
 
 CREATE TABLE contas (
   id INT AUTO_INCREMENT PRIMARY KEY,
+  plano VARCHAR(50) NOT NULL,
   codigo_reduzido VARCHAR(50),
   descricao VARCHAR(255) NOT NULL,
   mascara VARCHAR(50) NOT NULL,
