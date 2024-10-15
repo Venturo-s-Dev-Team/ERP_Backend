@@ -9,6 +9,7 @@ const { checkIfDatabaseExists } = require('./modules/middleware/MYSQL/CheckIfDat
 const { copyDatabase } = require('./modules/Functions/MYSQL/CopyDatabase'); // Copia o banco de dados
 const { createConnection } = require('./modules/KnexJS/CreateConnectionMultipleStatements'); // Cria uma conexxão sql MultipleStatements = true
 const { verifyToken } = require('./modules/middleware/Auth/JWT/VerifyToken')
+const { verifyAcess } = require('./modules/middleware/Auth/JWT/Acess'); // Middleware para autorizar requisições
 const { logAction } = require('./modules/Functions/LOGS/LogAction_db'); // Função de Logs
 const { logActionEmpresa } = require('./modules/Functions/LOGS/LogAction_db_empresas');
 const cookieParser = require('cookie-parser');
@@ -294,7 +295,7 @@ const DocsEmpresa = multer.diskStorage({
     { name: 'ContratoSocial', maxCount: 1 },
     { name: 'RequerimentoEmpresario', maxCount: 1 },
     { name: 'CertificadoMEI', maxCount: 1 },
-  ]), async (req, res) => {
+  ]), verifyAcess, async (req, res) => {
     const {
       InscricaoEstadual,
       Municipio,
@@ -310,6 +311,10 @@ const DocsEmpresa = multer.diskStorage({
     } = req.body;
   
     const { id } = req.params; // O ID da empresa está na URL
+
+    if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+      return res.status(403).json('403: Acesso inautorizado')
+    }
   
     try {
       const updateData = {
@@ -350,8 +355,12 @@ const DocsEmpresa = multer.diskStorage({
 // POST - EMPRESAS
 
 // Função para cadastrar um funcionário
-app.post('/cadastro_funcionario', async (req, res) => {
+app.post('/cadastro_funcionario', verifyAcess, async (req, res) => {
   const { Nome, Senha, TypeUser, Email, id, id_EmpresaDb, userId, userName } = req.body;
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     // Verifica se o funcionário já existe
@@ -419,7 +428,7 @@ const uploadProdutosImagens = multer({
 }).single('Imagem');
 
 // Rota para registrar produtos
-app.post('/RegistrarProduto/:id', (req, res) => {
+app.post('/RegistrarProduto/:id', verifyAcess, (req, res) => {
   uploadProdutosImagens(req, res, async function (err) {
     if (err instanceof multer.MulterError) {
       // Erro do Multer
@@ -429,6 +438,8 @@ app.post('/RegistrarProduto/:id', (req, res) => {
       // Erro de validação do arquivo
       console.error('Erro de validação:', err.message);
       return res.status(400).send({ message: err.message });
+    } else if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+      return res.status(403).json('403: Acesso inautorizado')
     }
 
     const { id } = req.params;
@@ -463,7 +474,7 @@ app.post('/RegistrarProduto/:id', (req, res) => {
 });
 
 //CLIENTES
-app.post(`/registerCliente`, async (req, res) => {
+app.post(`/registerCliente`, verifyAcess, async (req, res) => {
   const {
     id_EmpresaDb,
     razao_social,
@@ -487,6 +498,10 @@ app.post(`/registerCliente`, async (req, res) => {
     site,
     autorizados,
    } = req.body;
+
+   if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
@@ -520,7 +535,7 @@ app.post(`/registerCliente`, async (req, res) => {
 });
 
 //FORNECEDORES
-app.post("/registerFornecedor", async (req, res) => {
+app.post("/registerFornecedor", verifyAcess, async (req, res) => {
   const {
     id_EmpresaDb,
     razao_social,
@@ -539,6 +554,10 @@ app.post("/registerFornecedor", async (req, res) => {
     ramo_atividade,
     site,
   } = req.body;
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     // Criando conexão com o banco de dados específico da empresa
@@ -572,10 +591,12 @@ app.post("/registerFornecedor", async (req, res) => {
 
 
 // VENDAS
-app.post(`/registrarPedido/:id`, async (req, res) => {
+app.post(`/registrarPedido/:id`, verifyAcess, async (req, res) => {
   const { nome_cliente, produto, desconto, total, vendedor } = req.body;
 
-  console.log("Request body:", req.body); // Verificar os dados de entrada
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${req.params.id}`);
@@ -645,8 +666,12 @@ app.post(`/registrarPedido/:id`, async (req, res) => {
 });
 
 //DESPESAS
-app.post(`/registrarDespesas`, async (req, res) => {
+app.post(`/registrarDespesas`, verifyAcess, async (req, res) => {
   const { Valor, Nome, DataExpiracao, id_EmpresaDb, userName, userId } = req.body;
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
@@ -665,8 +690,13 @@ app.post(`/registrarDespesas`, async (req, res) => {
 });
 
 //RECEITAS
-app.post(`/registrarReceitas`, async (req, res) => {
+app.post(`/registrarReceitas`, verifyAcess, async (req, res) => {
   const { Nome, Valor, id_EmpresaDb, userId, userName } = req.body;
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
+
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
     const [newId] = await knexInstance('receitas').insert({
@@ -683,8 +713,12 @@ app.post(`/registrarReceitas`, async (req, res) => {
 });
 
 //PAGAMENTOS
-app.post(`/registrarPagamento`, async (req, res) => {
+app.post(`/registrarPagamento`, verifyAcess, async (req, res) => {
   const { Valor, Nome, Data, Conta, TipoPagamento, Descricao, id_EmpresaDb, userName, userId } = req.body;
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
@@ -705,8 +739,13 @@ app.post(`/registrarPagamento`, async (req, res) => {
 });
 
 //IMPOSTOS
-app.post(`/registrarImpostos`, async (req, res) => {
+app.post(`/registrarImpostos`, verifyAcess, async (req, res) => {
   const { uf, aliquota, tipo, id_EmpresaDb, userId, userName } = req.body;
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
+  
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
     const [newId] = await knexInstance('impostos').insert({
@@ -724,7 +763,7 @@ app.post(`/registrarImpostos`, async (req, res) => {
 });
 
 // REGISTRO PLANOS
-app.post(`/registrarPlanos/:id`, upload.none(), async (req, res) => {
+app.post(`/registrarPlanos/:id`, upload.none(), verifyAcess, async (req, res) => {
   const { id } = req.params;
   const {
     codigo_plano,
@@ -736,6 +775,10 @@ app.post(`/registrarPlanos/:id`, upload.none(), async (req, res) => {
 
   // Debugging log
   console.log('Dados recebidos:', req.body);
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -756,7 +799,7 @@ app.post(`/registrarPlanos/:id`, upload.none(), async (req, res) => {
 
 
 // REGISTRO CONTAS
-app.post(`/registrarContas/:id`, upload.none(), async (req, res) => {
+app.post(`/registrarContas/:id`, upload.none(), verifyAcess, async (req, res) => {
   const { id } = req.params;
   const {
     codigo_reduzido,
@@ -771,6 +814,10 @@ app.post(`/registrarContas/:id`, upload.none(), async (req, res) => {
 
   // Debugging log
   console.log('Dados recebidos:', req.body);
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -793,7 +840,7 @@ app.post(`/registrarContas/:id`, upload.none(), async (req, res) => {
 });
 
 
-app.post(`/registroContabil/:id`, upload.none(), async (req, res) => {
+app.post(`/registroContabil/:id`, upload.none(), verifyAcess, async (req, res) => {
   const { id } = req.params;
   const {
     mes_ano,
@@ -817,6 +864,10 @@ app.post(`/registroContabil/:id`, upload.none(), async (req, res) => {
     userId,
     userName,
   } = req.body;
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -853,8 +904,12 @@ app.post(`/registroContabil/:id`, upload.none(), async (req, res) => {
 // PUT
 
 // Função de atualização do pedido
-app.put(`/UpdatePedido/:id`, async (req, res) => {
+app.put(`/UpdatePedido/:id`, verifyAcess, async (req, res) => {
   const { id_pedido, nome_cliente, produto, desconto, total, vendedor } = req.body;
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${req.params.id}`);
@@ -953,13 +1008,15 @@ app.put(`/UpdatePedido/:id`, async (req, res) => {
 });
 
 // Rota para cancelar um pedido:
-app.put('/CancelarVenda/:id', async (req, res) => {
+app.put('/CancelarVenda/:id', verifyAcess, async (req, res) => {
   const { id } = req.params; // ID da empresa
   const { id_pedido, produto } = req.body; // Recebe o id_pedido e os produtos do front-end
 
   console.log("Recebido na rota CancelarVenda:", req.body);
 
-  if (!id_pedido || !produto) {
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  } else if (!id_pedido || !produto) {
     return res.status(400).json({ message: 'id_pedido e produto são obrigatórios.' });
   }
 
@@ -1054,9 +1111,13 @@ app.put('/CancelarVenda/:id', async (req, res) => {
 });
 
 // Rota para atualizar informações da venda
-app.put('/RegisterVenda/:id_pedido', async (req, res) => {
+app.put('/RegisterVenda/:id_pedido', verifyAcess, async (req, res) => {
   const { id_pedido } = req.params;
   const { cpf_cnpj, forma_pagamento, valor_total, selectedCliente, id } = JSON.parse(req.body.formData); // Recebe os dados do front-end
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -1113,9 +1174,13 @@ app.put('/RegisterVenda/:id_pedido', async (req, res) => {
 // GET
 
 // Historic Logs na Database principal 
-app.get('/MainHistoricLogs', async (req, res) => {
+app.get('/MainHistoricLogs', verifyAcess, async (req, res) => {
   const { page = 1, limit = 12, year, month } = req.query;
   const offset = (page - 1) * limit;
+
+  if (req.user.TypeUser != "SuperAdmin") {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     let query = mainDb('historico_logs').select('*').limit(limit).offset(offset).orderBy('timestamp', 'desc');
@@ -1144,10 +1209,14 @@ app.get('/MainHistoricLogs', async (req, res) => {
 // GET
 
 // Historic Logs na Database da empresa 
-app.get('/EmpresaHistoricLogs/:id', async (req, res) => {
+app.get('/EmpresaHistoricLogs/:id', verifyAcess, async (req, res) => {
   const id_EmpresaDb = req.params.id;  // Fixed variable name
   const { page = 1, limit = 10, year, month } = req.query;  // Default limit to 10
   const offset = (page - 1) * limit;
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);

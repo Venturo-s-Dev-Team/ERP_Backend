@@ -10,6 +10,7 @@ const { createConnection } = require('./modules/KnexJS/CreateConnectionMultipleS
 const { logAction } = require('./modules/Functions/LOGS/LogAction_db'); // Função de Logs
 const { logActionEmpresa } = require('./modules/Functions/LOGS/LogAction_db_empresas');
 const { createDatabaseAndTables } = require('./modules/Functions/MYSQL/CreateDatabase') // Cria o banco de dados da empresa
+const { verifyAcess } = require('./modules/middleware/Auth/JWT/Acess'); // Middleware para autorizar requisições
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const multer = require('multer');
@@ -48,7 +49,7 @@ const storageDocs = multer.diskStorage({
 const uploadDocs = multer({ storage: storageDocs });
 
 // Rota para enviar e-mails com arquivo anexado
-app.post('/email', uploadDocs.single('anexo'), async (req, res) => {
+app.post('/email', uploadDocs.single('anexo'), verifyAcess, async (req, res) => {
   const { Remetente, Destinatario, Assunto, Mensagem } = req.body;
   const arquivo = req.file; // Obtenha o arquivo do `req.file` gerado pelo multer
 
@@ -79,7 +80,7 @@ app.post('/email', uploadDocs.single('anexo'), async (req, res) => {
 });
 
 // Sugestão de e-mails
-app.get('/email_suggestions', async (req, res) => {
+app.get('/email_suggestions', verifyAcess, async (req, res) => {
   const { query } = req.query;
 
   try {
@@ -133,7 +134,7 @@ app.get('/email_suggestions', async (req, res) => {
 });
 
 // E-mails recebidos
-app.get('/caixa_entrada', async (req, res) => {
+app.get('/caixa_entrada', verifyAcess, async (req, res) => {
   const { Email } = req.query;
 
   try {
@@ -156,7 +157,7 @@ app.get('/caixa_entrada', async (req, res) => {
 });
 
 // Visualização do e-mail e remoção da notificação
-app.put('/caixa_entrada/view', async (req, res) => {
+app.put('/caixa_entrada/view', verifyAcess, async (req, res) => {
   const { id } = req.body;
 
   try {
@@ -172,7 +173,7 @@ app.put('/caixa_entrada/view', async (req, res) => {
 });
 
 // E-mails enviados (Caixa de Saída)
-app.get('/caixa_saida', async (req, res) => {
+app.get('/caixa_saida', verifyAcess, async (req, res) => {
   const { Email } = req.query;
 
   try {
@@ -195,7 +196,7 @@ app.get('/caixa_saida', async (req, res) => {
 });
 
 // Removendo visualização do remetente para um e-mail
-app.put('/excluir_email_remetente', async (req, res) => {
+app.put('/excluir_email_remetente', verifyAcess, async (req, res) => {
   const { id } = req.body;
 
   try {
@@ -210,7 +211,7 @@ app.put('/excluir_email_remetente', async (req, res) => {
 });
 
 // Removendo visualização do destinatário para um e-mail
-app.put('/excluir_email_destinatario', async (req, res) => {
+app.put('/excluir_email_destinatario', verifyAcess, async (req, res) => {
   const { id } = req.body;
 
   try {
@@ -225,116 +226,16 @@ app.put('/excluir_email_destinatario', async (req, res) => {
 });
 
 
-//DELETE
-
-// DELETE - EMPRESAS
-
-//ESTOQUE
-app.delete(`/tableEstoqueDelete/:id`, async (req, res) => {
-  const { id } = req.params; // Obtendo os IDs do produto da rota
-  const { produtoId } = req.body;
-
-  try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const rowsDeleted = await knexInstance('estoque').where({ id: produtoId }).del();
-
-    if (rowsDeleted) {
-      res.status(200).send({ message: 'Produto deletado com sucesso!' });
-    } else {
-      res.status(404).send({ message: 'Produto não encontrado' });
-    }
-  } catch (error) {
-    console.error('Erro ao deletar produto da tabela Estoque:', error);
-    res.status(500).send({ message: 'Erro ao deletar produto da tabela Estoque' });
-  }
-});
-
-//PAGAMENTOS
-app.delete(`/tablePagamentosDelete/:id`, async (req, res) => {
-  const { id } = req.params; // Obtendo os IDs do produto da rota
-  const { pagamentoId } = req.body;
-
-  try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const rowsDeleted = await knexInstance('pagamentos').where({ id: pagamentoId }).del();
-
-    if (rowsDeleted) {
-      res.status(200).send({ message: 'Registro de Pagamento deletado com sucesso!' });
-    } else {
-      res.status(404).send({ message: 'Registro de Pagamento não encontrado' });
-    }
-  } catch (error) {
-    console.error('Erro ao deletar Registro de Pagamento da tabela pagamentos:', error);
-    res.status(500).send({ message: 'Erro ao deletar Registro de Pagamento da tabela pagamentos' });
-  }
-});
-
-//DESPESAS
-app.delete(`/tableDespesasDelete/:id`, async (req, res) => {
-  const { id } = req.params; // Obtendo os IDs do produto da rota
-  const { despesasId } = req.body;
-
-  try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const rowsDeleted = await knexInstance('despesas').where({ id: despesasId }).del();
-
-    if (rowsDeleted) {
-      res.status(200).send({ message: 'Registro de despesa deletado com sucesso!' });
-    } else {
-      res.status(404).send({ message: 'Registro de despesa não encontrado' });
-    }
-  } catch (error) {
-    console.error('Erro ao deletar Registro de despesa da tabela despesa:', error);
-    res.status(500).send({ message: 'Erro ao deletar Registro de despesa da tabela despesa' });
-  }
-});
-
-//CLIENTES
-app.delete(`/tableCliente/:id`, async (req, res) => {
-  const { id } = req.params; // Obtendo os IDs do produto da rota
-  const { ClienteId } = req.body;
-
-  try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const rowsDeleted = await knexInstance('cliente').where({ id: ClienteId }).del();
-
-    if (rowsDeleted) {
-      res.status(200).send({ message: 'Cliente deletado com sucesso!' });
-    } else {
-      res.status(404).send({ message: 'Cliente não encontrado' });
-    }
-  } catch (error) {
-    console.error('Erro ao deletar Cliente da tabela Cliente:', error);
-    res.status(500).send({ message: 'Erro ao deletar Cliente da tabela Cliente' });
-  }
-});
-
-//FORNECEDORES
-app.delete(`/tableFornecedor/:id`, async (req, res) => {
-  const { id } = req.params; // Obtendo os IDs do produto da rota
-  const { FornecedorId } = req.body;
-
-  try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const rowsDeleted = await knexInstance('Fornecedor').where({ id: FornecedorId }).del();
-
-    if (rowsDeleted) {
-      res.status(200).send({ message: 'Fornecedor deletado com sucesso!' });
-    } else {
-      res.status(404).send({ message: 'Fornecedor não encontrado' });
-    }
-  } catch (error) {
-    console.error('Erro ao deletar Fornecedor da tabela Fornecedor:', error);
-    res.status(500).send({ message: 'Erro ao deletar Fornecedor da tabela Fornecedor' });
-  }
-});
-
-
 // GET
 
 // Informações das empresas
-app.get('/SelectInfoEmpresa/:id', async (req, res) => {
+app.get('/SelectInfoEmpresa/:id', verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  if (req.user.TypeUser != "SuperAdmin") {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
+  
   try {
     const SelectInfo = await mainDb('cadastro_empresarial').where({ id: parseInt(id) })
     if (SelectInfo) {
@@ -351,7 +252,12 @@ app.get('/SelectInfoEmpresa/:id', async (req, res) => {
 // TABELAS
 
 // Rota para tabelas de super administradores
-app.get('/tableSuperAdmins', async (req, res) => {
+app.get('/tableSuperAdmins', verifyAcess, async (req, res) => {
+
+  if (req.user.TypeUser != 'SuperAdmin') {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
+
   try {
     const project_Users_Admin = await mainDb('admin_users').select();
     res.status(200).send({ DadosTabela: project_Users_Admin });
@@ -362,21 +268,32 @@ app.get('/tableSuperAdmins', async (req, res) => {
 });
 
 // Rota para tabelas de empresas
-app.get('/tableEmpresas', async (req, res) => {
+app.get('/tableEmpresas', verifyAcess, async (req, res) => {
+
+  if (req.user.TypeUser != 'SuperAdmin') {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
+
   try {
     const project_CNPJ_Registers = await mainDb('cadastro_empresarial').select();
-    res.status(200).send({ InfoTabela: project_CNPJ_Registers });
+
+    console.log("Table:", project_CNPJ_Registers);
+    res.status(200).json({ InfoTabela: project_CNPJ_Registers, user: req.user }); // Envia os dados da tabela e o usuário
   } catch (err) {
     console.log('Erro ao carregar tabela', err);
-    return res.status(500).send({ errorCode: 500, message: "Não foi possível fazer a requisição das informações" });
+    return res.status(500).json({ errorCode: 500, message: "Não foi possível fazer a requisição das informações" });
   }
 });
 
 // TABLES --- EMPRESAS
 
 // Rota para obter informações da tabela Estoque
-app.get(`/tableEstoque/:id`, async (req, res) => {
+app.get(`/tableEstoque/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -389,8 +306,12 @@ app.get(`/tableEstoque/:id`, async (req, res) => {
 });
 
 // VENDAS
-app.get(`/tableVenda/:id`, async (req, res) => {
+app.get(`/tableVenda/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -403,8 +324,12 @@ app.get(`/tableVenda/:id`, async (req, res) => {
 });
 
 // Vendas em aberto
-app.get('/VendasEmAberto/:id', async (req, res) => {
+app.get('/VendasEmAberto/:id', verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -423,8 +348,12 @@ app.get('/VendasEmAberto/:id', async (req, res) => {
 });
 
 // Vendas em aberto
-app.get('/PedidosCancelados/:id', async (req, res) => {
+app.get('/PedidosCancelados/:id', verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -442,8 +371,12 @@ app.get('/PedidosCancelados/:id', async (req, res) => {
 });
 
 // Vendas concluídas 
-app.get('/VendasConcluidas/:id', async (req, res) => {
+app.get('/VendasConcluidas/:id', verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -461,8 +394,12 @@ app.get('/VendasConcluidas/:id', async (req, res) => {
 });
 
 // Rota para obter informações da tabela Pagamentos
-app.get(`/tablepagamentos/:id`, async (req, res) => {
+app.get(`/tablepagamentos/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -476,8 +413,12 @@ app.get(`/tablepagamentos/:id`, async (req, res) => {
 
 
 // Rota para obter informações da tabela Receitas
-app.get(`/tablereceitas/:id`, async (req, res) => {
+app.get(`/tablereceitas/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -490,8 +431,12 @@ app.get(`/tablereceitas/:id`, async (req, res) => {
 });
 
 // Rota para obter informações da tabela Despesas
-app.get(`/tabledespesas/:id`, async (req, res) => {
+app.get(`/tabledespesas/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -504,8 +449,12 @@ app.get(`/tabledespesas/:id`, async (req, res) => {
 });
 
 // Rota para obter informações da tabela Cliente
-app.get(`/tableCliente/:id`, async (req, res) => {
+app.get(`/tableCliente/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -518,11 +467,13 @@ app.get(`/tableCliente/:id`, async (req, res) => {
 });
 
 // Rota para obter informações de um único cliente
-app.get(`/SelectedCliente/:id`, async (req, res) => {
+app.get(`/SelectedCliente/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params;
   const { razao_social } = req.query; // Mudamos para `razao_social`
 
-  if (!razao_social) {
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  } else if (!razao_social) {
     return res.status(400).send({ message: 'Parâmetro razao_social está faltando' });
   }
 
@@ -540,8 +491,12 @@ app.get(`/SelectedCliente/:id`, async (req, res) => {
 });
 
 // Rota para obter informações da tabela Cliente
-app.get(`/tableFornecedor/:id`, async (req, res) => {
+app.get(`/tableFornecedor/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -553,8 +508,12 @@ app.get(`/tableFornecedor/:id`, async (req, res) => {
   }
 });
 
-app.get('/tableFuncionario/:id', async (req, res) => {
+app.get('/tableFuncionario/:id', verifyAcess, async (req, res) => {
   const { id } = req.params;
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -567,8 +526,12 @@ app.get('/tableFuncionario/:id', async (req, res) => {
 })
 
 // Rota para obter informações da tabela Impostos
-app.get(`/tableImpostos/:id`, async (req, res) => {
+app.get(`/tableImpostos/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -582,8 +545,12 @@ app.get(`/tableImpostos/:id`, async (req, res) => {
 
 
 // Rota para obter informações da tabela Planos
-app.get(`/tablePlanos/:id`, async (req, res) => {
+app.get(`/tablePlanos/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -596,8 +563,12 @@ app.get(`/tablePlanos/:id`, async (req, res) => {
 });
 
 // Rota para obter contas filtradas pela orientação (débito, crédito ou ambos) e pelo plano
-app.get(`/tableContas/:id/:plano/:orientacao`, async (req, res) => {
+app.get(`/tableContas/:id/:plano/:orientacao`, verifyAcess, async (req, res) => {
   const { id, plano, orientacao } = req.params; // Obtendo o ID da empresa, plano e a orientação da rota
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -620,9 +591,13 @@ app.get(`/tableContas/:id/:plano/:orientacao`, async (req, res) => {
 
 // UPDATES
 
-app.get('/autorizar/:id', async (req, res) => {
+app.get('/autorizar/:id', verifyAcess, async (req, res) => {
   const { id } = req.params;
   const {id_user, Nome_user} = req.body
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     // Atualiza o registro da empresa para autorizado
@@ -661,9 +636,13 @@ app.get('/autorizar/:id', async (req, res) => {
 });
 
 
-app.get('/desautorizar/:id', async (req, res) => {
+app.get('/desautorizar/:id', verifyAcess, async (req, res) => {
   const { id } = req.params;
   const {id_user, Nome_user} = req.body
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     // Atualiza o registro da empresa para não autorizado
@@ -700,9 +679,13 @@ app.get('/desautorizar/:id', async (req, res) => {
 //UPDATE - EMPRESAS 
 
 //CLIENTES
-app.put(`/tableCliente/:id`, async (req, res) => {
+app.put(`/tableCliente/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
   const { Nome, CPF_CNPJ, Enderecoid } = req.body;
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -719,9 +702,13 @@ app.put(`/tableCliente/:id`, async (req, res) => {
 });
 
 //FORNECEDORES
-app.put(`/tableFornecedorRegistro/:id`, async (req, res) => {
+app.put(`/tableFornecedorRegistro/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
   const { Nome, CNPJ, Enderecoid } = req.body;
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -738,9 +725,13 @@ app.put(`/tableFornecedorRegistro/:id`, async (req, res) => {
 });
 
 //PAGAMENTOS
-app.put(`/tablePagamentosRegistro/:id`, async (req, res) => {
+app.put(`/tablePagamentosRegistro/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
   const { Nome, Valor, Data, Conta, TipoPagamento, Descricao } = req.body;
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -757,9 +748,13 @@ app.put(`/tablePagamentosRegistro/:id`, async (req, res) => {
 });
 
 //VENDAS
-app.put(`/tableVendasUp/:id`, async (req, res) => {
+app.put(`/tableVendasUp/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
   const { nome_cliente, produto, quantidade, desconto, forma_pagamento, total, garantia, vendedor } = req.body;
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -776,9 +771,13 @@ app.put(`/tableVendasUp/:id`, async (req, res) => {
 });
 
 //CONTAS
-app.put(`/tableContasUp/:id`, async (req, res) => {
+app.put(`/tableContasUp/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
   const { codigo_reduzido, descricao, mascara, orientacao, tipo } = req.body;
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -797,8 +796,12 @@ app.put(`/tableContasUp/:id`, async (req, res) => {
 });
 
 // Rota para obter informações da tabela de lançamento contábil
-app.get(`/tableLancamentoContabil/:id`, async (req, res) => {
+app.get(`/tableLancamentoContabil/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -814,9 +817,13 @@ app.get(`/tableLancamentoContabil/:id`, async (req, res) => {
 // DESPESAS
 
 // Mudar o estado finalizado para 1
-app.put('/tableDespesasFinalizado/:id', async (req, res) => {
+app.put('/tableDespesasFinalizado/:id', verifyAcess, async (req, res) => {
   const { id } = req.params;
   const {id_EmpresaDb} = req.body
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
@@ -832,9 +839,13 @@ app.put('/tableDespesasFinalizado/:id', async (req, res) => {
 });
 
 // Mudar o estado finalizado para 1
-app.put('/tableDespesasNaoFinalizado/:id', async (req, res) => {
+app.put('/tableDespesasNaoFinalizado/:id', verifyAcess, async (req, res) => {
   const { id } = req.params;
   const {id_EmpresaDb} = req.body
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
@@ -887,7 +898,12 @@ const upload = multer({
 });
 
 // ESTOQUE
-app.put('/updateProduct/:id', upload.single('Imagem'), async (req, res) => {
+app.put('/updateProduct/:id', upload.single('Imagem'), verifyAcess, async (req, res) => {
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
+
   try {
     // Verifica se os dados foram recebidos corretamente
     const { Nome, Quantidade, ValorUnitario, Fornecedor, Tamanho, database_id } = req.body;
