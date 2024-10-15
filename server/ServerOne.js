@@ -394,7 +394,7 @@ app.get(`/tableVenda/:id`, async (req, res) => {
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const vendaINFO = await knexInstance('venda').select('*');
+    const vendaINFO = await knexInstance('venda').select('*').whereNull('id_venda').andWhereNot('Status', '=', 'CANCELADA').andWhereNot('Status', '=', 'VENDA CONCLUIDA')
     res.status(200).send({ InfoTabela: vendaINFO, N_Registros: vendaINFO.length });
   } catch (error) {
     console.error('Erro ao buscar informações da tabela Venda:', error);
@@ -414,6 +414,25 @@ app.get('/VendasEmAberto/:id', async (req, res) => {
       .select('*')
       .whereNull('id_venda') // Filtra registros onde 'id_venda' é nulo
       .andWhereNot('Status', '=', 'CANCELADA'); // Filtra registros onde 'Status' não é 'CANCELADO'
+
+    res.status(200).send({ InfoTabela: vendaINFO, N_Registros: vendaINFO.length });
+  } catch (error) {
+    console.error('Erro ao buscar informações da tabela Venda:', error);
+    res.status(500).send({ message: 'Erro ao buscar informações da tabela Venda' });
+  }
+});
+
+// Vendas em aberto
+app.get('/PedidosCancelados/:id', async (req, res) => {
+  const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+
+    // Consulta para buscar registros onde 'id_venda' é nulo e 'Status' não é 'CANCELADO'
+    const vendaINFO = await knexInstance('venda')
+      .select('*')
+      .where('Status', '=', 'CANCELADA'); // Filtra registros onde 'Status' não é 'CANCELADO'
 
     res.status(200).send({ InfoTabela: vendaINFO, N_Registros: vendaINFO.length });
   } catch (error) {
