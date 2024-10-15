@@ -421,6 +421,25 @@ app.get('/VendasEmAberto/:id', async (req, res) => {
   }
 });
 
+// Vendas concluídas 
+app.get('/VendasConcluidas/:id', async (req, res) => {
+  const { id } = req.params; // Obtendo o ID da empresa da rota
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+
+    // Consulta para buscar registros onde 'id_venda' é nulo e 'Status' não é 'CANCELADO'
+    const vendaINFO = await knexInstance('venda')
+      .select('*')
+      .whereNotNull('id_venda') // Filtra registros onde 'id_venda' não é nulo
+
+    res.status(200).send({ InfoTabela: vendaINFO, N_Registros: vendaINFO.length });
+  } catch (error) {
+    console.error('Erro ao buscar informações da tabela Venda:', error);
+    res.status(500).send({ message: 'Erro ao buscar informações da tabela Venda' });
+  }
+});
+
 // Rota para obter informações da tabela Pagamentos
 app.get(`/tablepagamentos/:id`, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
@@ -653,7 +672,8 @@ CREATE TABLE venda (
   total DECIMAL(10, 2),            -- Valor total da venda
   garantia VARCHAR(50),            -- Garantia oferecida (Ex: 1 ano, 6 meses)
   vendedor VARCHAR(100),            -- Nome do vendedor
-  Status VARCHAR(15) DEFAULT "ABERTO"
+  Status VARCHAR(15) DEFAULT "ABERTO",
+  Data DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 
