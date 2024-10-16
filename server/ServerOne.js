@@ -595,7 +595,7 @@ app.get('/autorizar/:id', verifyAcess, async (req, res) => {
   const { id } = req.params;
   const {id_user, Nome_user} = req.body
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+  if (req.user.TypeUser != "SuperAdmin") {
     return res.status(403).json('403: Acesso inautorizado')
   }
 
@@ -640,7 +640,7 @@ app.get('/desautorizar/:id', verifyAcess, async (req, res) => {
   const { id } = req.params;
   const {id_user, Nome_user} = req.body
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+  if (req.user.TypeUser != "SuperAdmin") {
     return res.status(403).json('403: Acesso inautorizado')
   }
 

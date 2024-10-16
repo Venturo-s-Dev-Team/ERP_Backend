@@ -1169,6 +1169,141 @@ app.put('/RegisterVenda/:id_pedido', verifyAcess, async (req, res) => {
   }
 });
 
+// CLIENTES
+app.put(`/UpdateCliente/:id`, verifyAcess, async (req, res) => {
+  const {
+    id_EmpresaDb,
+    razao_social,
+    cpf_cnpj,
+    observacoes,
+    nome_fantasia,
+    logradouro,
+    bairro,
+    cidade,
+    cep,
+    uf,
+    endereco,
+    email, 
+    telefone,
+    ativo,
+    ie,
+    dia_para_faturamento,
+    ramo_atividade,
+    funcionario,
+    limite,
+    site,
+    autorizados,
+  } = req.body;
+
+  const { id } = req.params;
+
+  const allowedTypes = ['Gestor', 'Socio', 'Estoque', 'Financeiro', 'Venda'];
+  if (!allowedTypes.includes(req.user.TypeUser)) {
+    return res.status(403).json({ message: '403: Acesso inautorizado' });
+  }
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+
+    const updatedRows = await knexInstance('cliente')
+      .where({ id })
+      .update({
+        razao_social,
+        cpf_cnpj,
+        observacoes,
+        nome_fantasia,
+        logradouro,
+        bairro,
+        cidade,
+        cep,
+        uf,
+        endereco,
+        email, 
+        telefone,
+        ativo,
+        ie,
+        dia_para_faturamento,
+        ramo_atividade,
+        funcionario,
+        limite,
+        site,
+        autorizados
+      });
+
+    if (updatedRows === 0) {
+      return res.status(404).json({ message: 'Cliente não encontrado.' });
+    }
+
+    res.status(200).send({ message: 'Cliente atualizado com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao atualizar Cliente na tabela Clientes:', error);
+    res.status(500).send({ message: 'Erro ao atualizar Cliente na tabela Clientes' });
+  }
+});
+
+//FORNECEDORES
+app.put("/UpdateFornecedor/:id", verifyAcess, async (req, res) => {
+  const {
+    id_EmpresaDb,
+    razao_social,
+    cpf_cnpj,
+    observacoes,
+    nome_fantasia,
+    logradouro,
+    bairro,
+    cidade,
+    cep,
+    uf,
+    endereco,
+    email,
+    telefone,
+    ie,
+    ramo_atividade,
+    site,
+  } = req.body;
+
+  const {id} = req.params
+
+  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+    return res.status(403).json('403: Acesso inautorizado')
+  }
+
+  try {
+    // Criando conexão com o banco de dados específico da empresa
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+
+    // Atualizando dados do fornecedor na tabela 'fornecedor' (MySQL)
+const updatedRows = await knexInstance("fornecedor")
+.where({ id })
+.update({
+  razao_social,
+  cpf_cnpj,
+  observacoes,
+  nome_fantasia,
+  logradouro,
+  bairro,
+  cidade,
+  cep,
+  uf,
+  endereco,
+  email,
+  telefone,
+  ie,
+  ramo_atividade,
+  site,
+});
+
+if (updatedRows > 0) {
+res.status(200).send({ message: "Fornecedor atualizado com sucesso!" });
+} else {
+res.status(404).send({ message: "Fornecedor não encontrado." });
+}
+
+  } catch (error) {
+    console.error("Erro ao adicionar Fornecedor:", error);
+    res.status(500).send({ message: "Erro ao adicionar Fornecedor na tabela Fornecedor" });
+  }
+});
 
 
 // GET
@@ -1204,7 +1339,6 @@ app.get('/MainHistoricLogs', verifyAcess, async (req, res) => {
     res.status(500).send('Erro ao buscar logs');
   }
 });
-
 
 // GET
 
