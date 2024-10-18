@@ -903,6 +903,38 @@ app.post(`/registroContabil/:id`, upload.none(), verifyAcess, async (req, res) =
 
 // PUT
 
+//DESPESAS
+app.put(`/AtualizandoInfoDespesa/:id`, verifyAcess, async (req, res) => {
+  const { Valor, Nome, DataExpiracao, id_EmpresaDb, userName, userId } = req.body;
+  const { id } = req.params;
+
+  if (!['Gestor', 'Socio', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
+  }
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+    const affectedRows = await knexInstance('despesas')
+      .where('id', id)
+      .update({
+        Valor,
+        Nome,
+        DataExpiracao,
+      });
+
+    if (affectedRows === 0) {
+      return res.status(404).send({ message: 'Despesa não encontrada' });
+    }
+
+    await logActionEmpresa(id_EmpresaDb, userId, userName, `Atualizou uma despesa (${id})`, `empresa_${id_EmpresaDb}.despesas`);
+    res.status(200).send({ message: 'Despesa atualizada com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao atualizar despesa na tabela despesas:', error);
+    res.status(500).send({ message: 'Erro ao atualizar despesa na tabela despesas' });
+  }
+});
+
+
 // Função de atualização do pedido
 app.put(`/UpdatePedido/:id`, verifyAcess, async (req, res) => {
   const { id_pedido, nome_cliente, produto, desconto, total, vendedor } = req.body;
@@ -1113,14 +1145,18 @@ app.put('/CancelarVenda/:id', verifyAcess, async (req, res) => {
 // Rota para atualizar informações da venda
 app.put('/RegisterVenda/:id_pedido', verifyAcess, async (req, res) => {
   const { id_pedido } = req.params;
-  const { cpf_cnpj, forma_pagamento, valor_total, selectedCliente, id } = JSON.parse(req.body.formData); // Recebe os dados do front-end
+  const { cpf_cnpj, forma_pagamento, valor_total, selectedCliente, nome_cliente, DataExpiracao, id } = JSON.parse(req.body.formData); // Recebe os dados do front-end
 
   if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
     return res.status(403).json('403: Acesso inautorizado')
   }
 
+  console.log(nome_cliente)
+
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+
+    if (!DataExpiracao) {
     
     // 1. Recuperar o valor mais alto de id_venda
     const maxVenda = await knexInstance('venda')
@@ -1143,7 +1179,7 @@ app.put('/RegisterVenda/:id_pedido', verifyAcess, async (req, res) => {
       });
 
     // 3. Definir o nome da receita
-    const nomeReceita = `Venda: ${novoIdVenda}`;
+    const nomeReceita = `Venda de número ${novoIdVenda} para ${nome_cliente}`;
 
     // 4. Definir a data de expiração com base no dia de faturamento ou na data atual
     let dataExpiracao = new Date(); // Por padrão, a data é a data atual
@@ -1162,6 +1198,42 @@ app.put('/RegisterVenda/:id_pedido', verifyAcess, async (req, res) => {
 
     // Enviar uma resposta de sucesso
     res.status(200).json({ message: 'Venda atualizada e receita registrada com sucesso!', novoIdVenda });
+
+  } else {
+        // 1. Recuperar o valor mais alto de id_venda
+        const maxVenda = await knexInstance('venda')
+        .max('id_venda as maxId')  // Buscar o valor máximo de id_venda
+        .first(); // Pega o primeiro resultado
+      
+      let novoIdVenda = 1; // Se não houver registros, o id_venda começará em 1
+      if (maxVenda && maxVenda.maxId) {
+        novoIdVenda = maxVenda.maxId + 1; // Incrementa o maior valor atual
+      }
+  
+      // 2. Atualizar o pedido com o novo id_venda
+      await knexInstance('venda')
+        .where({ id_pedido })
+        .update({
+          id_venda: novoIdVenda,
+          cpf_cnpj,
+          forma_pagamento,
+          Status: "VENDA CONCLUÍDA"
+        });
+  
+    // 3. Definir o nome da receita
+    const nomeReceita = `Venda de número ${novoIdVenda} para ${nome_cliente}`;
+  
+  
+      // 4. Inserir a nova receita na tabela 'receitas'
+      await knexInstance('receitas').insert({
+        Nome: nomeReceita,
+        Valor: valor_total, // O valor da venda
+        DataExpiracao // Data de expiração
+      });
+  
+      // Enviar uma resposta de sucesso
+      res.status(200).json({ message: 'Venda atualizada e receita registrada com sucesso!', novoIdVenda });
+  }
     
   } catch (error) {
     console.error('Erro ao atualizar a venda e registrar a receita:', error);
@@ -1374,6 +1446,23 @@ app.get('/EmpresaHistoricLogs/:id', verifyAcess, async (req, res) => {
   } catch (err) {
     console.error('Erro ao buscar logs:', err);
     res.status(500).send('Erro ao buscar logs');
+  }
+});
+
+// Rota para receber o PDF da nota fiscal 
+app.post('/api/uploadPDF', upload.single('pdf'), async (req, res) => {
+  try {
+    const pdfBuffer = req.file.buffer; // O PDF será enviado como um buffer pelo Multer
+
+    // Insira o PDF no banco de dados
+    await knex('notas_fiscais').insert({
+      pdf_document: pdfBuffer,
+    });
+
+    res.status(201).json({ message: 'PDF salvo com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao salvar PDF:', error);
+    res.status(500).json({ message: 'Erro ao salvar o PDF.' });
   }
 });
 

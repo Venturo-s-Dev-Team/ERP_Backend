@@ -21,6 +21,12 @@ Valor DECIMAL(15, 2) NOT NULL,
 DataExpiracao datetime DEFAULT current_timestamp()
 );
 
+CREATE TABLE notas_fiscais (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  pdf_document LONGBLOB,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE despesas (
 id INT AUTO_INCREMENT PRIMARY KEY,
 Nome VARCHAR(255) NOT NULL,
