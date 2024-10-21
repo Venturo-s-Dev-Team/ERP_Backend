@@ -117,7 +117,7 @@ observacoes TEXT,
 ramo_atividade VARCHAR(255) ,
 site VARCHAR(255),
 cpf_cnpj VARCHAR(18) ,
-ie VARCHAR(12),
+ie VARCHAR(20),
 telefone VARCHAR(20),
 celular VARCHAR(20)
 );

@@ -906,7 +906,7 @@ app.put('/updateProduct/:id', upload.single('Imagem'), verifyAcess, async (req, 
 
   try {
     // Verifica se os dados foram recebidos corretamente
-    const { Nome, Quantidade, ValorUnitario, Fornecedor, Tamanho, database_id } = req.body;
+    const { Nome, Quantidade, ValorUnitario, Fornecedor, Tamanho, database_id, userId, userName } = req.body;
     const imagem = req.file ? req.file.path : null;
     const id = req.params.id;
 
@@ -934,6 +934,8 @@ if (req.file) {
     await knexInstance('estoque')
       .where({ Codigo: id })
       .update(updatedData);
+
+      await logActionEmpresa(database_id, userId, userName, `Atualizou um produto com o código ${id}`, `empresa_${database_id}.estoque`)
 
     return res.status(200).json({ message: 'Produto atualizado com sucesso!' });
   } catch (error) {

@@ -497,6 +497,8 @@ app.post(`/registerCliente`, verifyAcess, async (req, res) => {
     limite,
     site,
     autorizados,
+    userId,
+    userName
    } = req.body;
 
    if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
@@ -527,6 +529,7 @@ app.post(`/registerCliente`, verifyAcess, async (req, res) => {
       site,
       autorizados
     });
+    await logActionEmpresa(id_EmpresaDb, userId, userName, `Cadastrou um cliente no sistema com o nome ${razao_social}`, `empresa_${id_EmpresaDb}.cliente`)
     res.status(200).send({ id: newId, message: 'Cliente registrado com sucesso!' });
   } catch (error) {
     console.error('Erro ao adicionar Cliente na tabela Clientes:', error);
@@ -553,6 +556,8 @@ app.post("/registerFornecedor", verifyAcess, async (req, res) => {
     ie,
     ramo_atividade,
     site,
+    userId,
+    userName
   } = req.body;
 
   if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
@@ -581,6 +586,8 @@ app.post("/registerFornecedor", verifyAcess, async (req, res) => {
       ramo_atividade,
       site,
     });
+
+    await logActionEmpresa(id_EmpresaDb, userId, userName, `Cadastrou um fornecedor no sistema com o nome ${razao_social}`, `empresa_${id_EmpresaDb}.fornecedor`)
 
     res.status(200).send({ id: newId, message: "Fornecedor registrado com sucesso!" });
   } catch (error) {
@@ -1042,7 +1049,7 @@ app.put(`/UpdatePedido/:id`, verifyAcess, async (req, res) => {
 // Rota para cancelar um pedido:
 app.put('/CancelarVenda/:id', verifyAcess, async (req, res) => {
   const { id } = req.params; // ID da empresa
-  const { id_pedido, produto } = req.body; // Recebe o id_pedido e os produtos do front-end
+  const { id_pedido, produto, userId, userName } = req.body; // Recebe o id_pedido e os produtos do front-end
 
   console.log("Recebido na rota CancelarVenda:", req.body);
 
@@ -1127,6 +1134,7 @@ app.put('/CancelarVenda/:id', verifyAcess, async (req, res) => {
 
       // Finalizar a transação
       await trx.commit();
+      await logActionEmpresa(id, userId, userName, `Cancelou um pedido no sistema com o id ${id_pedido}`, `empresa_${id}.venda`)
       res.status(200).json({ message: 'Pedido cancelado e estoque atualizado com sucesso!' });
 
     } catch (error) {
@@ -1265,6 +1273,8 @@ app.put(`/UpdateCliente/:id`, verifyAcess, async (req, res) => {
     limite,
     site,
     autorizados,
+    userId,
+    userName
   } = req.body;
 
   const { id } = req.params;
@@ -1306,6 +1316,8 @@ app.put(`/UpdateCliente/:id`, verifyAcess, async (req, res) => {
       return res.status(404).json({ message: 'Cliente não encontrado.' });
     }
 
+    await logActionEmpresa(id_EmpresaDb, userId, userName, `Atualizou um cliente no sistema com o ID ${id}`, `empresa_${id_EmpresaDb}.cliente`)
+
     res.status(200).send({ message: 'Cliente atualizado com sucesso!' });
   } catch (error) {
     console.error('Erro ao atualizar Cliente na tabela Clientes:', error);
@@ -1332,6 +1344,8 @@ app.put("/UpdateFornecedor/:id", verifyAcess, async (req, res) => {
     ie,
     ramo_atividade,
     site,
+    userId,
+    userName
   } = req.body;
 
   const {id} = req.params
@@ -1362,10 +1376,11 @@ const updatedRows = await knexInstance("fornecedor")
   telefone,
   ie,
   ramo_atividade,
-  site,
+  site
 });
 
 if (updatedRows > 0) {
+  await logActionEmpresa(id_EmpresaDb, userId, userName, `Atualizou um fornecedor no sistema com o id ${id}`, `empresa_${id_EmpresaDb}.fornecedor`)
 res.status(200).send({ message: "Fornecedor atualizado com sucesso!" });
 } else {
 res.status(404).send({ message: "Fornecedor não encontrado." });
