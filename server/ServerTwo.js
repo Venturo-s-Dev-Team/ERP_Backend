@@ -599,7 +599,7 @@ app.post("/registerFornecedor", verifyAcess, async (req, res) => {
 
 // VENDAS
 app.post(`/registrarPedido/:id`, verifyAcess, async (req, res) => {
-  const { nome_cliente, produto, desconto, total, vendedor } = req.body;
+  const { nome_cliente, produto, desconto, total, vendedor, userName, userId } = req.body;
 
   if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
     return res.status(403).json('403: Acesso inautorizado')
@@ -657,6 +657,8 @@ app.post(`/registrarPedido/:id`, verifyAcess, async (req, res) => {
 
       // Finalizar a transação
       await trx.commit();
+      console.log(userId, userName)
+      await logActionEmpresa(req.params.id, userId, userName, `Gerou um pedido para ${nome_cliente}`, `empresa_${req.params.id}.venda`)
       res.status(201).send({ id: newId, message: 'Venda registrada e estoque atualizado com sucesso!' });
 
     } catch (error) {
