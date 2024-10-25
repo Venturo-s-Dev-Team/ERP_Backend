@@ -386,7 +386,7 @@ app.post('/api/uploadPDF', upload.single('pdf'), async (req, res) => {
 
 // Função para cadastrar um funcionário
 app.post('/cadastro_funcionario', verifyAcess, async (req, res) => {
-  const { Nome, Senha, TypeUser, Email, id, id_EmpresaDb, userId, userName } = req.body;
+  const { Nome, Senha, TypeUser, Email, emailPessoal, cpf, id, id_EmpresaDb, userId, userName } = req.body;
 
   if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
     return res.status(403).json('403: Acesso inautorizado')
@@ -407,7 +407,9 @@ app.post('/cadastro_funcionario', verifyAcess, async (req, res) => {
       Nome,
       Senha: hashedPassword,
       TypeUser,
-      Email
+      Email,
+      emailPessoal,
+      cpf
     });
 
     await logActionEmpresa(id_EmpresaDb, userId, userName, `Cadastrou um funcionário com o nome: ${Nome}, e com o cargo de ${TypeUser}`, `empresa_${id_EmpresaDb}.funcionario`)
