@@ -131,7 +131,7 @@ app.post('/login', async (req, res) => {
           }
 
           const empresaDb = createEmpresaKnexConnection(databaseName);
-          const tableName = 'Funcionario'; // Nome da tabela no banco da empresa
+          const tableName = 'funcionario'; // Nome da tabela no banco da empresa
           funcionario = await empresaDb(tableName).where({ Nome }).first();
 
           if (funcionario) {
@@ -325,7 +325,7 @@ app.post('/updateEmpresa/:id', DocsEmpresaUpload.fields([
 
   const { id } = req.params; // O ID da empresa está na URL
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
+  if (req.user.TypeUser != 'Gestor') {
     return res.status(403).json('403: Acesso inautorizado')
   }
 
@@ -388,8 +388,8 @@ app.post('/api/uploadPDF', upload.single('pdf'), async (req, res) => {
 app.post('/cadastro_funcionario', verifyAcess, async (req, res) => {
   const { Nome, Senha, TypeUser, Email, emailPessoal, cpf, id, id_EmpresaDb, userId, userName } = req.body;
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+  if (!['Gestor', 'Socio'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -470,8 +470,8 @@ app.post('/RegistrarProduto/:id', verifyAcess, (req, res) => {
       // Erro de validação do arquivo
       console.error('Erro de validação:', err.message);
       return res.status(400).send({ message: err.message });
-    } else if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-      return res.status(403).json('403: Acesso inautorizado')
+    } else if (!['Gestor', 'Socio', 'Estoque'].includes(req.user.TypeUser)) {
+      return res.status(403).json('403: Acesso inautorizado');
     }
 
     const { id } = req.params;
@@ -533,8 +533,8 @@ app.post(`/registerCliente`, verifyAcess, async (req, res) => {
     userName
   } = req.body;
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+  if (!['Gestor', 'Socio', 'Gerente', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -592,8 +592,8 @@ app.post("/registerFornecedor", verifyAcess, async (req, res) => {
     userName
   } = req.body;
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+  if (!['Gestor', 'Socio', 'Gerente', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -633,8 +633,8 @@ app.post("/registerFornecedor", verifyAcess, async (req, res) => {
 app.post(`/registrarPedido/:id`, verifyAcess, async (req, res) => {
   const { nome_cliente, produto, desconto, total, vendedor, userName, userId } = req.body;
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+  if (!['Gestor', 'Socio', 'Gerente', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -710,8 +710,8 @@ app.post(`/registrarPedido/:id`, verifyAcess, async (req, res) => {
 app.post(`/registrarDespesas`, verifyAcess, async (req, res) => {
   const { Valor, Nome, DataExpiracao, id_EmpresaDb, userName, userId } = req.body;
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+  if (!['Gestor', 'Socio', 'Financeiro',].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -734,8 +734,8 @@ app.post(`/registrarDespesas`, verifyAcess, async (req, res) => {
 app.post(`/registrarReceitas`, verifyAcess, async (req, res) => {
   const { Nome, Valor, id_EmpresaDb, userId, userName } = req.body;
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+  if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -757,8 +757,8 @@ app.post(`/registrarReceitas`, verifyAcess, async (req, res) => {
 app.post(`/registrarPagamento`, verifyAcess, async (req, res) => {
   const { Valor, Nome, Data, Conta, TipoPagamento, Descricao, id_EmpresaDb, userName, userId } = req.body;
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+  if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -783,9 +783,10 @@ app.post(`/registrarPagamento`, verifyAcess, async (req, res) => {
 app.post(`/registrarImpostos`, verifyAcess, async (req, res) => {
   const { uf, aliquota, tipo, id_EmpresaDb, userId, userName } = req.body;
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+  if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
+
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
@@ -817,9 +818,10 @@ app.post(`/registrarPlanos/:id`, upload.none(), verifyAcess, async (req, res) =>
   // Debugging log
   console.log('Dados recebidos:', req.body);
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+  if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
+
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -856,9 +858,10 @@ app.post(`/registrarContas/:id`, upload.none(), verifyAcess, async (req, res) =>
   // Debugging log
   console.log('Dados recebidos:', req.body);
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+  if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
+
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
@@ -906,8 +909,8 @@ app.post(`/registroContabil/:id`, upload.none(), verifyAcess, async (req, res) =
     userName,
   } = req.body;
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+  if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -949,7 +952,7 @@ app.put(`/AtualizandoInfoDespesa/:id`, verifyAcess, async (req, res) => {
   const { Valor, Nome, DataExpiracao, id_EmpresaDb, userName, userId } = req.body;
   const { id } = req.params;
 
-  if (!['Gestor', 'Socio', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -980,8 +983,8 @@ app.put(`/AtualizandoInfoDespesa/:id`, verifyAcess, async (req, res) => {
 app.put(`/UpdatePedido/:id`, verifyAcess, async (req, res) => {
   const { id_pedido, nome_cliente, produto, desconto, total, vendedor, userId } = req.body;
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+  if (!['Gestor', 'Socio', 'Gerente', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -1088,8 +1091,8 @@ app.put('/CancelarVenda/:id', verifyAcess, async (req, res) => {
 
   console.log("Recebido na rota CancelarVenda:", req.body);
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+  if (!['Gestor', 'Socio', 'Gerente', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   } else if (!id_pedido || !produto) {
     return res.status(400).json({ message: 'id_pedido e produto são obrigatórios.' });
   }
@@ -1190,8 +1193,8 @@ app.put('/RegisterVenda/:id_pedido', verifyAcess, async (req, res) => {
   const { id_pedido } = req.params;
   const { cpf_cnpj, forma_pagamento, valor_total, selectedCliente, nome_cliente, DataExpiracao, id, userId, userName } = JSON.parse(req.body.formData); // Recebe os dados do front-end
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+  if (!['Gestor', 'Socio', 'Caixa'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   console.log(nome_cliente)
@@ -1318,9 +1321,8 @@ app.put(`/UpdateCliente/:id`, verifyAcess, async (req, res) => {
 
   const { id } = req.params;
 
-  const allowedTypes = ['Gestor', 'Socio', 'Estoque', 'Financeiro', 'Venda'];
-  if (!allowedTypes.includes(req.user.TypeUser)) {
-    return res.status(403).json({ message: '403: Acesso inautorizado' });
+  if (!['Gestor', 'Socio', 'Gerente', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -1389,8 +1391,8 @@ app.put("/UpdateFornecedor/:id", verifyAcess, async (req, res) => {
 
   const { id } = req.params
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+  if (!['Gestor', 'Socio', 'Gerente', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -1474,8 +1476,8 @@ app.get('/EmpresaHistoricLogs/:id', verifyAcess, async (req, res) => {
   const { page = 1, limit = 10, year, month } = req.query;  // Default limit to 10
   const offset = (page - 1) * limit;
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+  if (!['Gestor', 'Socio', 'Gerente'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {

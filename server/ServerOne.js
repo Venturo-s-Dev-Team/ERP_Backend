@@ -291,8 +291,8 @@ app.get('/tableEmpresas', verifyAcess, async (req, res) => {
 app.get(`/tableEstoque/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -309,8 +309,8 @@ app.get(`/tableEstoque/:id`, verifyAcess, async (req, res) => {
 app.get(`/tableVenda/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -327,8 +327,8 @@ app.get(`/tableVenda/:id`, verifyAcess, async (req, res) => {
 app.get('/VendasEmAberto/:id', verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda', "Caixa"].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -351,8 +351,8 @@ app.get('/VendasEmAberto/:id', verifyAcess, async (req, res) => {
 app.get('/PedidosCancelados/:id', verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -374,8 +374,8 @@ app.get('/PedidosCancelados/:id', verifyAcess, async (req, res) => {
 app.get('/VendasConcluidas/:id', verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -397,8 +397,8 @@ app.get('/VendasConcluidas/:id', verifyAcess, async (req, res) => {
 app.get(`/tablepagamentos/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -416,8 +416,8 @@ app.get(`/tablepagamentos/:id`, verifyAcess, async (req, res) => {
 app.get(`/tablereceitas/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda', 'Caixa'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -434,8 +434,8 @@ app.get(`/tablereceitas/:id`, verifyAcess, async (req, res) => {
 app.get(`/tabledespesas/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda', 'Caixa'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -452,8 +452,8 @@ app.get(`/tabledespesas/:id`, verifyAcess, async (req, res) => {
 app.get(`/tableCliente/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -471,10 +471,8 @@ app.get(`/SelectedCliente/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params;
   const { razao_social } = req.query; // Mudamos para `razao_social`
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
-  } else if (!razao_social) {
-    return res.status(400).send({ message: 'Parâmetro razao_social está faltando' });
+  if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -494,8 +492,8 @@ app.get(`/SelectedCliente/:id`, verifyAcess, async (req, res) => {
 app.get(`/tableFornecedor/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -511,8 +509,8 @@ app.get(`/tableFornecedor/:id`, verifyAcess, async (req, res) => {
 app.get('/tableFuncionario/:id', verifyAcess, async (req, res) => {
   const { id } = req.params;
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -529,8 +527,8 @@ app.get('/tableFuncionario/:id', verifyAcess, async (req, res) => {
 app.get(`/tableImpostos/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -548,8 +546,8 @@ app.get(`/tableImpostos/:id`, verifyAcess, async (req, res) => {
 app.get(`/tablePlanos/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -566,8 +564,8 @@ app.get(`/tablePlanos/:id`, verifyAcess, async (req, res) => {
 app.get(`/tableContas/:id/:plano/:orientacao`, verifyAcess, async (req, res) => {
   const { id, plano, orientacao } = req.params; // Obtendo o ID da empresa, plano e a orientação da rota
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -683,8 +681,8 @@ app.put(`/tableCliente/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
   const { Nome, CPF_CNPJ, Enderecoid } = req.body;
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -706,8 +704,8 @@ app.put(`/tableFornecedorRegistro/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
   const { Nome, CNPJ, Enderecoid } = req.body;
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -729,8 +727,8 @@ app.put(`/tablePagamentosRegistro/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
   const { Nome, Valor, Data, Conta, TipoPagamento, Descricao } = req.body;
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -752,8 +750,8 @@ app.put(`/tableVendasUp/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
   const { nome_cliente, produto, quantidade, desconto, forma_pagamento, total, garantia, vendedor } = req.body;
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Venda'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -775,8 +773,8 @@ app.put(`/tableContasUp/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
   const { codigo_reduzido, descricao, mascara, orientacao, tipo } = req.body;
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Financeiro'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -799,8 +797,8 @@ app.put(`/tableContasUp/:id`, verifyAcess, async (req, res) => {
 app.get(`/tableLancamentoContabil/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Financeiro'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -821,8 +819,8 @@ app.put('/tableDespesasFinalizado/:id', verifyAcess, async (req, res) => {
   const { id } = req.params;
   const {id_EmpresaDb} = req.body
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -843,8 +841,8 @@ app.put('/tableDespesasNaoFinalizado/:id', verifyAcess, async (req, res) => {
   const { id } = req.params;
   const {id_EmpresaDb} = req.body
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
@@ -900,8 +898,8 @@ const upload = multer({
 // ESTOQUE
 app.put('/updateProduct/:id', upload.single('Imagem'), verifyAcess, async (req, res) => {
 
-  if (req.user.TypeUser != ('Gestor' || 'Socio' || 'Estoque' || 'Financeiro' || 'Venda')) {
-    return res.status(403).json('403: Acesso inautorizado')
+    if (!['Gestor', 'Socio', 'Gerente', 'Estoque'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
