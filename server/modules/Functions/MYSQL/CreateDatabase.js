@@ -59,7 +59,6 @@ Status VARCHAR(15) DEFAULT "EM ABERTO",
 Data DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-
 CREATE TABLE contas (
 id INT AUTO_INCREMENT PRIMARY KEY,
 plano VARCHAR(50) NOT NULL,
@@ -70,14 +69,12 @@ orientacao ENUM('Crédito', 'Débito', 'Ambos') NOT NULL,
 tipo ENUM('Sintética', 'Analítica') NOT NULL
 );
 
-
 CREATE TABLE planos (
 id INT AUTO_INCREMENT PRIMARY KEY,
 codigo_plano VARCHAR(50),
 descricao VARCHAR(255) NOT NULL,
 mascara VARCHAR(50) NOT NULL
 );
-
 
 CREATE TABLE cliente (
 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -102,6 +99,35 @@ cpf_cnpj VARCHAR(18) ,
 ie VARCHAR(20),
 telefone VARCHAR(20),
 celular VARCHAR(20)
+);
+
+-- Inserção de um cliente com razao_social = "Consumidor"
+INSERT INTO cliente (
+  razao_social, nome_fantasia, logradouro, bairro, cidade, cep, uf, endereco, email, autorizados, 
+  observacoes, dia_para_faturamento, funcionario, ramo_atividade, limite, site, ativo, cpf_cnpj, ie, 
+  telefone, celular
+) VALUES (
+  'Consumidor', 
+  '', 
+  '', 
+  '', 
+  '', 
+  '', 
+  '', 
+  '', 
+  '', 
+  '', 
+  '', 
+  '', 
+  '', 
+  '', 
+  '', 
+  '', 
+  'SIM', 
+  '', 
+  '', 
+  '', 
+  ''
 );
 
 CREATE TABLE fornecedor (
@@ -189,8 +215,7 @@ Conta INT NOT NULL,
 TipoPagamento VARCHAR(50), 
 Descricao TEXT
 );
+`;
+};
 
- `;
-}
-
-module.exports = { createDatabaseAndTables }
+module.exports = { createDatabaseAndTables };

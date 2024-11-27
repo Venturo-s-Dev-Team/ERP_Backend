@@ -948,6 +948,63 @@ app.post(`/registroContabil/:id`, upload.none(), verifyAcess, async (req, res) =
 // PUT
 
 //DESPESAS
+app.put(`/EditDespesa/:id`, verifyAcess, async (req, res) => {
+  const { id } = req.params
+  const { Valor, Nome, DataExpiracao, id_EmpresaDb, userName, userId } = req.body;
+
+  if (!['Gestor', 'Socio', 'Financeiro',].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
+  }
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+    const [newId] = await knexInstance('despesas').where("id", id).update({
+      Valor,
+      Nome,
+      DataExpiracao,
+    });
+
+    await logActionEmpresa(id_EmpresaDb, userId, userName, `Atualizou uma despesa com o nome: ${Nome}`, `empresa_${id_EmpresaDb}.despesas`)
+    res.status(201).send({ id: newId, message: 'despesa atualizada com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao atualizar despesa na tabela despesa:', error);
+    res.status(500).send({ message: 'Erro ao atualizar despesa na tabela despesa' });
+  }
+});
+
+//RECEITAS
+app.put('/EditReceita', verifyAcess, async (req, res) => {
+  const { Nome, Valor, id_Receita, userId, userName, id_EmpresaDb } = req.body;
+
+  if (!['Gestor', 'Socio', 'Gerente', 'Financeiro'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
+  }
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+    
+    // Atualizar receita
+    await knexInstance('receitas')
+      .where("id", id_Receita)
+      .update({ Nome, Valor });
+
+    // Log de ação
+    await logActionEmpresa(
+      id_EmpresaDb,
+      userId,
+      userName,
+      `Atualizou uma receita com o id: ${id_Receita}`,
+      `empresa_${id_EmpresaDb}.receitas`
+    );
+
+    res.status(200).send({ id: id_Receita, message: 'Receita atualizada com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao atualizar receita na tabela receitas:', error);
+    res.status(500).send({ message: 'Erro ao atualizar receita na tabela receitas' });
+  }
+});
+
+//DESPESAS
 app.put(`/AtualizandoInfoDespesa/:id`, verifyAcess, async (req, res) => {
   const { Valor, Nome, DataExpiracao, id_EmpresaDb, userName, userId } = req.body;
   const { id } = req.params;
