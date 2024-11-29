@@ -397,15 +397,14 @@ app.get('/VendasConcluidas/:id', verifyAcess, async (req, res) => {
 });
 
 // Rota para obter informações da tabela Pagamentos
-app.get(`/tablepagamentos/:id`, verifyAcess, async (req, res) => {
-  const { id } = req.params; // Obtendo o ID da empresa da rota
+app.get(`/tablepagamentos`, verifyAcess, async (req, res) => {
 
     if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const knexInstance = createEmpresaKnexConnection(`empresa_${req.user.id_EmpresaDb}`);
     const pagamentoInfo = await knexInstance('pagamentos').select('*');
     res.status(200).send({ InfoTabela: pagamentoInfo });
   } catch (error) {
@@ -724,96 +723,6 @@ app.put(`/tableFornecedorRegistro/:id`, verifyAcess, async (req, res) => {
     res.status(500).send({ message: 'Erro ao atualizar Fornecedor na tabela Fornecedor' });
   }
 });
-
-//PAGAMENTOS
-app.put(`/tablePagamentosRegistro/:id`, verifyAcess, async (req, res) => {
-  const { id } = req.params; // Obtendo o ID da empresa da rota
-  const { Nome, Valor, Data, Conta, TipoPagamento, Descricao } = req.body;
-
-    if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
-    return res.status(403).json('403: Acesso inautorizado');
-  }
-
-  try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const [newId] = await knexInstance('pagamentos').insert({
-      Nome,
-      CNPJ,
-      Enderecoid,
-    });
-    res.status(201).send({ id: newId, message: 'Registro de pagamento atualizado com sucesso!' });
-  } catch (error) {
-    console.error('Erro ao atualizar pagamento na tabela pagamento:', error);
-    res.status(500).send({ message: 'Erro ao atualizar pagamento na tabela pagamento' });
-  }
-});
-
-//VENDAS
-app.put(`/tableVendasUp/:id`, verifyAcess, async (req, res) => {
-  const { id } = req.params; // Obtendo o ID da empresa da rota
-  const { nome_cliente, produto, quantidade, desconto, forma_pagamento, total, garantia, vendedor } = req.body;
-
-    if (!['Gestor', 'Socio', 'Gerente', 'Venda'].includes(req.user.TypeUser)) {
-    return res.status(403).json('403: Acesso inautorizado');
-  }
-
-  try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const [newId] = await knexInstance('venda').insert({
-      Nome,
-      CNPJ,
-      Enderecoid,
-    });
-    res.status(201).send({ id: newId, message: 'Registro de Vendas atualizado com sucesso!' });
-  } catch (error) {
-    console.error('Erro ao atualizar Venda na tabela Vendas:', error);
-    res.status(500).send({ message: 'Erro ao atualizar Venda na tabela Vendas' });
-  }
-});
-
-//CONTAS
-app.put(`/tableContasUp/:id`, verifyAcess, async (req, res) => {
-  const { id } = req.params; // Obtendo o ID da empresa da rota
-  const { codigo_reduzido, descricao, mascara, orientacao, tipo } = req.body;
-
-    if (!['Gestor', 'Socio', 'Gerente', 'Financeiro'].includes(req.user.TypeUser)) {
-    return res.status(403).json('403: Acesso inautorizado');
-  }
-
-  try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const [newId] = await knexInstance('contas').insert({
-      codigo_reduzido,
-      descricao,
-      mascara,
-      orientacao,
-      tipo,
-    });
-    res.status(201).send({ id: newId, message: 'Registro de Contas atualizado com sucesso!' });
-  } catch (error) {
-    console.error('Erro ao atualizar Conta na tabela Contas:', error);
-    res.status(500).send({ message: 'Erro ao atualizar Conta na tabela Contas' });
-  }
-});
-
-// Rota para obter informações da tabela de lançamento contábil
-app.get(`/tableLancamentoContabil/:id`, verifyAcess, async (req, res) => {
-  const { id } = req.params; // Obtendo o ID da empresa da rota
-
-    if (!['Gestor', 'Socio', 'Gerente', 'Financeiro'].includes(req.user.TypeUser)) {
-    return res.status(403).json('403: Acesso inautorizado');
-  }
-
-  try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const response = await knexInstance('lancamento_contabil').select('*');
-    res.status(200).send(response);
-  } catch (error) {
-    console.error('Erro ao buscar informações da tabela de lançamento contábil:', error);
-    res.status(500).send({ message: 'Erro ao buscar informações da tabela de lançamento contábil' });
-  }
-});
-
 
 // DESPESAS
 

@@ -1,3 +1,5 @@
+# Ainda não esta integrado o docker corretamente, por isso efetue apenas instalação do projeto com "npm install", e inicie ele com "npm start"
+
 FROM node:18-alpine
 
 WORKDIR /erp

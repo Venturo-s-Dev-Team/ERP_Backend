@@ -652,7 +652,7 @@ app.post("/registerFornecedor", verifyAcess, async (req, res) => {
 
 // VENDAS
 app.post(`/registrarPedido/:id`, verifyAcess, async (req, res) => {
-  const { nome_cliente, produto, desconto, total, vendedor, userName, userId } = req.body;
+  const { nome_cliente, produto, desconto, total, vendedor, } = req.body;
 
   if (!['Gestor', 'Socio', 'Gerente', 'Venda'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
@@ -710,8 +710,7 @@ app.post(`/registrarPedido/:id`, verifyAcess, async (req, res) => {
 
       // Finalizar a transação
       await trx.commit();
-      console.log(userId, userName)
-      await logActionEmpresa(req.params.id, userId, userName, `Gerou um pedido para ${nome_cliente}`, `empresa_${req.params.id}.venda`)
+      await logActionEmpresa(req.params.id, req.user.id, vendedor, `Gerou um pedido para ${nome_cliente}`, `empresa_${req.params.id}.venda`)
       res.status(201).send({ id: newId, message: 'Venda registrada e estoque atualizado com sucesso!' });
 
     } catch (error) {
@@ -776,14 +775,14 @@ app.post(`/registrarReceitas`, verifyAcess, async (req, res) => {
 
 //PAGAMENTOS
 app.post(`/registrarPagamento`, verifyAcess, async (req, res) => {
-  const { Valor, Nome, Data, Conta, TipoPagamento, Descricao, id_EmpresaDb, userName, userId } = req.body;
+  const { Valor, Nome, Data, Conta, TipoPagamento, Descricao } = req.body;
 
   if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
+    const knexInstance = createEmpresaKnexConnection(`empresa_${req.user.id_EmpresaDb}`);
     const [newId] = await knexInstance('pagamentos').insert({
       Valor,
       Nome,
@@ -792,177 +791,11 @@ app.post(`/registrarPagamento`, verifyAcess, async (req, res) => {
       TipoPagamento,
       Descricao,
     });
-    await logActionEmpresa(id_EmpresaDb, userId, userName, `Registrou uma despesa com o nome: ${Nome}`, `empresa_${id_EmpresaDb}.despesas`)
+    await logActionEmpresa(req.user.id_EmpresaDb, req.user.id_user, req.user.Nome_user, `Registrou uma despesa com o nome: ${Nome}`, `empresa_${req.user.id_EmpresaDb}.despesas`)
     res.status(201).send({ id: newId, message: 'despesa registrada com sucesso!' });
   } catch (error) {
     console.error('Erro ao adicionar despesa na tabela despesa:', error);
     res.status(500).send({ message: 'Erro ao adicionar For na tabela despesa' });
-  }
-});
-
-//IMPOSTOS
-app.post(`/registrarImpostos`, verifyAcess, async (req, res) => {
-  const { uf, aliquota, tipo, id_EmpresaDb, userId, userName } = req.body;
-
-  if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
-    return res.status(403).json('403: Acesso inautorizado');
-  }
-
-
-  try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
-    const [newId] = await knexInstance('impostos').insert({
-      uf,
-      aliquota,
-      tipo,
-    });
-
-    await logActionEmpresa(id_EmpresaDb, userId, userName, `Registrou uma receita com o nome: ${Nome}`, `empresa_${id_EmpresaDb}.receitas`)
-    res.status(201).send({ id: newId, message: 'receita registrada com sucesso!' });
-  } catch (error) {
-    console.error('Erro ao adicionar receita na tabela receita:', error);
-    res.status(500).send({ message: 'Erro ao adicionar For na tabela receitas' });
-  }
-});
-
-// REGISTRO PLANOS
-app.post(`/registrarPlanos/:id`, upload.none(), verifyAcess, async (req, res) => {
-  const { id } = req.params;
-  const {
-    codigo_plano,
-    descricao,
-    mascara,
-    userId,
-    userName,
-  } = req.body;
-
-  // Debugging log
-  console.log('Dados recebidos:', req.body);
-
-  if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
-    return res.status(403).json('403: Acesso inautorizado');
-  }
-
-
-  try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const [newId] = await knexInstance('planos').insert({
-      codigo_plano,
-      descricao,
-      mascara,
-    });
-
-    await logActionEmpresa(id, userId, userName, `Registrou uma conta com o ID: ${newId}`, `empresa_${id}.conta`);
-
-    res.status(201).send({ id: newId, message: 'Conta registrada com sucesso!' });
-  } catch (error) {
-    console.error('Erro ao adicionar transação na tabela Contas:', error);
-    res.status(500).send({ message: 'Erro ao adicionar conta na tabela' });
-  }
-});
-
-
-// REGISTRO CONTAS
-app.post(`/registrarContas/:id`, upload.none(), verifyAcess, async (req, res) => {
-  const { id } = req.params;
-  const {
-    codigo_reduzido,
-    plano,
-    descricao,
-    mascara,
-    orientacao,
-    tipo,
-    userId,
-    userName,
-  } = req.body;
-
-  // Debugging log
-  console.log('Dados recebidos:', req.body);
-
-  if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
-    return res.status(403).json('403: Acesso inautorizado');
-  }
-
-
-  try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const [newId] = await knexInstance('contas').insert({
-      codigo_reduzido,
-      plano,
-      descricao,
-      mascara,
-      orientacao,
-      tipo,
-    });
-
-    await logActionEmpresa(id, userId, userName, `Registrou uma conta com o ID: ${newId}`, `empresa_${id}.conta`);
-
-    res.status(201).send({ id: newId, message: 'Conta registrada com sucesso!' });
-  } catch (error) {
-    console.error('Erro ao adicionar transação na tabela Contas:', error);
-    res.status(500).send({ message: 'Erro ao adicionar conta na tabela' });
-  }
-});
-
-
-app.post(`/registroContabil/:id`, upload.none(), verifyAcess, async (req, res) => {
-  const { id } = req.params;
-  const {
-    mes_ano,
-    lancamento,
-    lote,
-    unidade_negocio,
-    data,
-    documento,
-    tipo_documento,
-    debito_valor,
-    debito_tipo, // Certifique-se de que este valor está sendo enviado
-    debito_conta,
-    credito_valor,
-    credito_tipo, // Certifique-se de que este valor está sendo enviado
-    credito_conta,
-    transacao,
-    empresa,
-    valor_empresa,
-    codigo_historico,
-    historico_completo,
-    userId,
-    userName,
-  } = req.body;
-
-  if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
-    return res.status(403).json('403: Acesso inautorizado');
-  }
-
-  try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    const [newId] = await knexInstance('lancamento_contabil').insert({
-      mes_ano,
-      lancamento,
-      lote,
-      unidade_negocio,
-      data_movimento: data,
-      documento,
-      tipo_documento,
-      debito_valor,
-      debito_tipo, // Debito tipo salvo no banco
-      debito_conta,
-      credito_valor,
-      credito_tipo, // Credito tipo salvo no banco
-      credito_conta,
-      transacao_valor: transacao,
-      empresa,
-      empresa_valor: valor_empresa,
-      codigo_historico,
-      historico_completo,
-    });
-
-    await logActionEmpresa(id, userId, userName, `Registrou uma transação com o ID: ${newId}`, `empresa_${id}.transacoes`);
-
-    res.status(201).send({ id: newId, message: 'Transação registrada com sucesso!' });
-  } catch (error) {
-    console.error('Erro ao adicionar transação na tabela lancamento_contabil:', error);
-    res.status(500).send({ message: 'Erro ao adicionar transação na tabela' });
   }
 });
 
@@ -994,9 +827,40 @@ app.put(`/EditDespesa/:id`, verifyAcess, async (req, res) => {
 });
 
 //FUNCIONARIO
-app.put("/atualizar-senha/:id", async (req, res) => {
+app.put("/updateFuncionario/:id", verifyAcess, async (req, res) => {
+  const { id } = req.params
+  const { id_funcionario, Nome, cpf, email, emailPessoal, TypeUser } = req.body;
+
+  if (!['Gestor', 'Socio', 'Gerente'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
+  }
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+
+    const result = await knexInstance("funcionario")
+      .where({ id: id_funcionario })
+      .update({ Nome, cpf, email, emailPessoal, TypeUser }); // Atualiza a senha do funcionário no banco
+
+    if (result) {
+      await logActionEmpresa(id, req.user.id_user, req.user.Nome_user, `Atualizou as informações do funcionário (${id_funcionario})`, `empresa_${id}.funcionario`);
+      return res.status(200).json({ message: "Informações atualizadas com sucesso!" });
+    } else {
+      return res.status(404).json({ message: "Funcionário não encontrado." });
+    }
+  } catch (error) {
+    console.log("Erro ao atualizar informações do funcionário:", error);
+    return res.status(500).json({ message: "Erro ao atualizar informações do funcionário." });
+  }
+});
+
+app.put("/atualizar-senha/:id", verifyAcess, async (req, res) => {
   const { id } = req.params
   const { id_funcionario, senha } = req.body;
+
+  if (!['Gestor', 'Socio', 'Gerente'].includes(req.user.TypeUser)) {
+    return res.status(403).json('403: Acesso inautorizado');
+  }
 
   try {
     // Criptografando a senha com bcrypt
@@ -1009,6 +873,7 @@ app.put("/atualizar-senha/:id", async (req, res) => {
       .update({ Senha: hashedPassword }); // Atualiza a senha do funcionário no banco
 
     if (result) {
+      await logActionEmpresa(id, req.user.id_user, req.user.Nome_user, `Atualizou a senha do funcionário (${id_funcionario})`, `empresa_${id}.funcionario`);
       return res.status(200).json({ message: "Senha atualizada com sucesso!" });
     } else {
       return res.status(404).json({ message: "Funcionário não encontrado." });
@@ -1043,7 +908,7 @@ app.put('/EditReceita', verifyAcess, async (req, res) => {
       `Atualizou uma receita com o id: ${id_Receita}`,
       `empresa_${id_EmpresaDb}.receitas`
     );
-
+    await logActionEmpresa(id_EmpresaDb, req.user.id_user, req.user.Nome_user, `Atualizou uma receita (${id_Receita})`, `empresa_${id_EmpresaDb}.receitas`);
     res.status(200).send({ id: id_Receita, message: 'Receita atualizada com sucesso!' });
   } catch (error) {
     console.error('Erro ao atualizar receita na tabela receitas:', error);
