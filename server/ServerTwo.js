@@ -440,6 +440,27 @@ const storageProdutosImagens = multer.diskStorage({
   }
 });
 
+app.post("/BuscarFuncionario/:id", async (req, res) => {
+  const { id } = req.params
+  const { nome, cpf } = req.body;
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+    const funcionario = await knexInstance("funcionario")
+      .where({ Nome: nome, cpf })
+      .first(); // Busca o primeiro funcionário que corresponder ao nome e CPF
+
+    if (funcionario) {
+      return res.status(200).json({ id: funcionario.id });
+    } else {
+      return res.status(404).json({ message: "Funcionário não encontrado." });
+    }
+  } catch (error) {
+    console.log("Erro ao buscar funcionário:", error);
+    return res.status(500).json({ message: "Erro interno ao buscar funcionário." });
+  }
+});
+
 // Filtro para aceitar apenas arquivos de imagem
 const fileFilterImg = (req, file, cb) => {
   const fileTypes = /jpeg|jpg|png|gif/;
@@ -969,6 +990,32 @@ app.put(`/EditDespesa/:id`, verifyAcess, async (req, res) => {
   } catch (error) {
     console.error('Erro ao atualizar despesa na tabela despesa:', error);
     res.status(500).send({ message: 'Erro ao atualizar despesa na tabela despesa' });
+  }
+});
+
+//FUNCIONARIO
+app.put("/atualizar-senha/:id", async (req, res) => {
+  const { id } = req.params
+  const { id_funcionario, senha } = req.body;
+
+  try {
+    // Criptografando a senha com bcrypt
+    const hashedPassword = await bcrypt.hash(senha, 10);
+
+    const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
+
+    const result = await knexInstance("funcionario")
+      .where({ id: id_funcionario })
+      .update({ Senha: hashedPassword }); // Atualiza a senha do funcionário no banco
+
+    if (result) {
+      return res.status(200).json({ message: "Senha atualizada com sucesso!" });
+    } else {
+      return res.status(404).json({ message: "Funcionário não encontrado." });
+    }
+  } catch (error) {
+    console.log("Erro ao atualizar senha:", error);
+    return res.status(500).json({ message: "Erro ao atualizar a senha." });
   }
 });
 
