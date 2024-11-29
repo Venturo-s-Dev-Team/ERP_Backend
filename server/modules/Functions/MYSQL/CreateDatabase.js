@@ -103,8 +103,8 @@ celular VARCHAR(20)
 
 -- Inserção de um cliente com razao_social = "Consumidor"
 INSERT INTO cliente (
-  razao_social, nome_fantasia, logradouro, bairro, cidade, cep, uf, endereco, email, autorizados, 
-  observacoes, dia_para_faturamento, funcionario, ramo_atividade, limite, site, ativo, cpf_cnpj, ie, 
+  razao_social, nome_fantasia, logradouro, bairro, cidade, cep, uf, endereco, email, autorizados,
+  observacoes, dia_para_faturamento, funcionario, ramo_atividade, limite, site, ativo, cpf_cnpj, ie,
   telefone, celular
 ) VALUES (
   'Consumidor', 
@@ -118,10 +118,10 @@ INSERT INTO cliente (
   '', 
   '', 
   '', 
+  NULL,  -- Substitua por NULL se não houver valor para 'dia_para_faturamento'
   '', 
   '', 
-  '', 
-  '', 
+  NULL,  -- Substitua por NULL se não houver valor para 'limite'
   '', 
   'SIM', 
   '', 

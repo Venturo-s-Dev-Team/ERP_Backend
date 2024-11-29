@@ -232,22 +232,25 @@ app.put('/excluir_email_destinatario', verifyAcess, async (req, res) => {
 app.get('/SelectInfoEmpresa/:id', verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-  if (req.user.TypeUser != "SuperAdmin") {
-    return res.status(403).json('403: Acesso inautorizado')
+  if (req.user.TypeUser !== "SuperAdmin") {
+    return res.status(403).json('403: Acesso inautorizado');
   }
   
   try {
-    const SelectInfo = await mainDb('cadastro_empresarial').where({ id: parseInt(id) })
-    if (SelectInfo) {
-      res.status(200).send({ InfoEmpresa: SelectInfo })
+    const SelectInfo = await mainDb('cadastro_empresarial').where({ id: parseInt(id) });
+
+    if (SelectInfo && SelectInfo.length > 0) {
+      const InfoEmpresa = { ...SelectInfo[0] }; // Copia os dados
+      delete InfoEmpresa.Senha; // Exclui a chave 'Senha'
+      res.status(200).json({ InfoEmpresa });
     } else {
-      res.status(500)
+      res.status(404).json('Empresa não encontrada');
     }
   } catch (error) {
     console.log('Erro ao coletar dados: ', error);
-    res.status(500)
+    res.status(500).json({ error: 'Erro ao coletar dados' });
   }
-})
+});
 
 // TABELAS
 
@@ -277,7 +280,7 @@ app.get('/tableEmpresas', verifyAcess, async (req, res) => {
   try {
     const project_CNPJ_Registers = await mainDb('cadastro_empresarial').select();
 
-    console.log("Table:", project_CNPJ_Registers);
+    console.log(project_CNPJ_Registers.length ,"empesa(s) encontrada(s)");
     res.status(200).json({ InfoTabela: project_CNPJ_Registers, user: req.user }); // Envia os dados da tabela e o usuário
   } catch (err) {
     console.log('Erro ao carregar tabela', err);
