@@ -281,7 +281,7 @@ app.get('/logout', async (req, res) => {
   } else {
     await logActionEmpresa(id_EmpresaDb, userId, userName, 'Logout', `empresa_${id_EmpresaDb}.funcionario`);
 
-   return res.sendStatus(200);
+    return res.sendStatus(200);
   }
 });
 
@@ -554,7 +554,7 @@ app.post(`/registerCliente`, verifyAcess, async (req, res) => {
     userName
   } = req.body;
 
-  if (!['Gestor', 'Socio', 'Gerente', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Financeiro'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -801,6 +801,45 @@ app.post(`/registrarPagamento`, verifyAcess, async (req, res) => {
 
 // PUT
 
+// PAGAMENTOS
+app.put(`/atualizarPagamento/:id`, verifyAcess, async (req, res) => {
+  // Verificação de tipo de usuário
+  if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
+    return res.status(403).json({ error: 'Acesso não autorizado' });
+  }
+
+  const { id } = req.params;
+  const { Nome, Valor, Data, Conta, TipoPagamento, Descricao } = req.body;
+
+  try {
+    const knexInstance = createEmpresaKnexConnection(`empresa_${req.user.id_EmpresaDb}`);
+
+    const updated = await knexInstance('pagamentos')
+      .where('id', id)
+      .update({
+        Nome,
+        Valor,
+        Data,
+        Conta,
+        TipoPagamento,
+        Descricao
+      });
+
+    if (updated) {
+      await logActionEmpresa(req.user.id_EmpresaDb, req.user.id_user, req.user.Nome_user, `Atualizou um pagamento de número ${id}`, `empresa_${req.user.id_EmpresaDb}.despesas`)
+      res.status(200).json({ message: 'Pagamento atualizado com sucesso' });
+    } else {
+      res.status(404).json({ error: 'Pagamento não encontrado' });
+    }
+  } catch (error) {
+    console.error('Erro ao atualizar pagamento:', error);
+    res.status(500).json({
+      message: 'Erro ao atualizar pagamento',
+      error: error.message
+    });
+  }
+});
+
 //DESPESAS
 app.put(`/EditDespesa/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params
@@ -894,7 +933,7 @@ app.put('/EditReceita', verifyAcess, async (req, res) => {
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
-    
+
     // Atualizar receita
     await knexInstance('receitas')
       .where("id", id_Receita)
@@ -1404,18 +1443,21 @@ app.put("/UpdateFornecedor/:id", verifyAcess, async (req, res) => {
 
 
 // GET
-
-// Historic Logs na Database principal 
 app.get('/MainHistoricLogs', verifyAcess, async (req, res) => {
   const { page = 1, limit = 12, year, month } = req.query;
   const offset = (page - 1) * limit;
 
-  if (req.user.TypeUser != "SuperAdmin") {
-    return res.status(403).json('403: Acesso inautorizado')
+  if (req.user.TypeUser !== "SuperAdmin") {
+    return res.status(403).json({ message: '403: Acesso não autorizado' });
   }
 
   try {
-    let query = mainDb('historico_logs').select('*').limit(limit).offset(offset).orderBy('timestamp', 'desc');
+    const LogsTotal = mainDb('historico_logs').select("*");
+    let query = mainDb('historico_logs')
+      .select('*')
+      .limit(limit)
+      .offset(offset)
+      .orderBy('timestamp', 'desc');
 
     if (year) {
       query = query.whereRaw('YEAR(timestamp) = ?', [year]);
@@ -1426,23 +1468,48 @@ app.get('/MainHistoricLogs', verifyAcess, async (req, res) => {
     }
 
     const logs = await query;
-    const totalLogs = await mainDb('historico_logs').count('* as count').first();
+
+    const totalLogs = await mainDb('historico_logs')
+      .modify(qb => {
+        if (year) qb.whereRaw('YEAR(timestamp) = ?', [year]);
+        if (month) qb.whereRaw('MONTH(timestamp) = ?', [month]);
+      })
+      .count('* as count')
+      .first();
+
     const totalPages = Math.ceil(totalLogs.count / limit);
 
-    res.status(200).json({ logs, currentPage: page, totalPages });
-    console.log('Requisição do log efetuada com sucesso');
+    // Retornar também anos e meses distintos para renderizar botões no frontend
+    const uniqueYears = await mainDb('historico_logs')
+      .distinct(mainDb.raw('YEAR(timestamp) as year'))
+      .orderBy('year', 'desc');
+
+    const uniqueMonths = year
+      ? await mainDb('historico_logs')
+        .distinct(mainDb.raw('MONTH(timestamp) as month'))
+        .whereRaw('YEAR(timestamp) = ?', [year])
+        .orderBy('month', 'asc')
+      : [];
+
+    res.status(200).json({
+      logs,
+      totalPages,
+      years: uniqueYears.map(y => y.year),
+      months: uniqueMonths.map(m => m.month),
+      N_Registros: (await totalLogs).length
+    });
   } catch (err) {
     console.error('Erro ao buscar logs:', err);
     res.status(500).send('Erro ao buscar logs');
   }
 });
 
+
 // GET
 
 // Historic Logs na Database da empresa 
-app.get('/EmpresaHistoricLogs/:id', verifyAcess, async (req, res) => {
-  const id_EmpresaDb = req.params.id;  // Fixed variable name
-  const { page = 1, limit = 10, year, month } = req.query;  // Default limit to 10
+app.get('/EmpresaHistoricLogs', verifyAcess, async (req, res) => {
+  const { page = 1, limit = 12, year, month } = req.query;
   const offset = (page - 1) * limit;
 
   if (!['Gestor', 'Socio', 'Gerente'].includes(req.user.TypeUser)) {
@@ -1450,24 +1517,39 @@ app.get('/EmpresaHistoricLogs/:id', verifyAcess, async (req, res) => {
   }
 
   try {
-    const knexInstance = createEmpresaKnexConnection(`empresa_${id_EmpresaDb}`);
-    const lenghtData = knexInstance('historicologs').select('*');
-    let query = knexInstance('historicologs').select('*').limit(limit).offset(offset).orderBy('timestamp', 'desc');
+    const knexInstance = createEmpresaKnexConnection(`empresa_${req.user.id_EmpresaDb}`);
+    const LogsTotal = knexInstance('historicologs').select("*")
+    let logsQuery = knexInstance('historicologs')
+      .select('*')
+      .limit(limit)
+      .offset(offset)
+      .orderBy('timestamp', 'desc');
 
-    if (year) {
-      query = query.whereRaw('YEAR(timestamp) = ?', [year]);
-    }
+    if (year) logsQuery = logsQuery.whereRaw('YEAR(timestamp) = ?', [year]);
+    if (month) logsQuery = logsQuery.whereRaw('MONTH(timestamp) = ?', [month]);
 
-    if (month) {
-      query = query.whereRaw('MONTH(timestamp) = ?', [month]);
-    }
+    const logs = await logsQuery;
+    const totalLogs = await knexInstance('historicologs')
+      .count('* as count')
+      .first();
+    const uniqueYears = await knexInstance('historicologs')
+      .distinct(knexInstance.raw('YEAR(timestamp) as year'))
+      .orderBy('year', 'desc');
+    const uniqueMonths = year
+      ? await knexInstance('historicologs')
+        .distinct(knexInstance.raw('MONTH(timestamp) as month'))
+        .whereRaw('YEAR(timestamp) = ?', [year])
+        .orderBy('month', 'asc')
+      : [];
 
-    const logs = await query;
-    const totalLogs = await knexInstance('historicologs').count('* as count').first();
-    const totalPages = Math.ceil(totalLogs.count / limit);
-
-    res.status(200).json({ logs, currentPage: page, totalPages, N_Registros: (await lenghtData).length });
-    console.log('Requisição do log efetuada com sucesso');
+    res.status(200).json({
+      logs,
+      currentPage: page,
+      totalPages: Math.ceil(totalLogs.count / limit),
+      years: uniqueYears.map((y) => y.year),
+      months: uniqueMonths.map((m) => m.month),
+      N_Registros: (await LogsTotal).length
+    });
   } catch (err) {
     console.error('Erro ao buscar logs:', err);
     res.status(500).send('Erro ao buscar logs');

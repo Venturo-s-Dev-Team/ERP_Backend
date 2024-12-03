@@ -135,16 +135,15 @@ app.get('/email_suggestions', verifyAcess, async (req, res) => {
 
 // E-mails recebidos
 app.get('/caixa_entrada', verifyAcess, async (req, res) => {
-  const { Email } = req.query;
 
   try {
     const Emails = await mainDb('mensagens')
-      .where({ 'Destinatario': Email, 'destinatarioDelete': 0 })
+      .where({ 'Destinatario': req.user.Email, 'destinatarioDelete': 0 })
       .select('*');
       
     if (Emails.length > 0) {
       res.status(200).json(Emails);
-      console.log(`E-mails enviados para ${Email}: `)
+      console.log(`E-mails enviados para ${req.user.Email}: `)
       console.table(Emails);
     } else {
       res.status(204).send('Não há mensagens para você');
@@ -174,16 +173,15 @@ app.put('/caixa_entrada/view', verifyAcess, async (req, res) => {
 
 // E-mails enviados (Caixa de Saída)
 app.get('/caixa_saida', verifyAcess, async (req, res) => {
-  const { Email } = req.query;
 
   try {
     const Emails = await mainDb('mensagens')
-      .where({ 'Remetente': Email, 'remetenteDelete': 0 })
+      .where({ 'Remetente': req.user.Email, 'remetenteDelete': 0 })
       .select('*');
       
     if (Emails.length > 0) {
       res.status(200).json(Emails);
-      console.log(`E-mails enviados por ${Email}: `)
+      console.log(`E-mails enviados por ${req.user.Email}: `)
       console.table('Caixa de Saída: ', Emails);
     } else {
       res.status(204).send('Você não enviou nenhuma mensagem');
@@ -396,23 +394,38 @@ app.get('/VendasConcluidas/:id', verifyAcess, async (req, res) => {
   }
 });
 
-// Rota para obter informações da tabela Pagamentos
 app.get(`/tablepagamentos`, verifyAcess, async (req, res) => {
-
-    if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
-    return res.status(403).json('403: Acesso inautorizado');
+  // Verificação de tipo de usuário
+  if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
+    return res.status(403).json({ error: 'Acesso não autorizado' });
   }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${req.user.id_EmpresaDb}`);
-    const pagamentoInfo = await knexInstance('pagamentos').select('*');
-    res.status(200).send({ InfoTabela: pagamentoInfo });
+    
+    // Possível ordenação por data mais recente
+    const pagamentoInfo = await knexInstance('pagamentos')
+      .select('*')
+      .orderBy('Data', 'desc');  // Ordena por data em ordem decrescente
+
+    // Formata o valor monetário se necessário
+    const formattedPagamentos = pagamentoInfo.map(pagamento => ({
+      ...pagamento,
+      Valor: parseFloat(pagamento.Valor).toFixed(2)  // Garante duas casas decimais
+    }));
+
+    res.status(200).send({ 
+      InfoTabela: formattedPagamentos,
+      total: formattedPagamentos.length  // Adiciona contagem total de pagamentos
+    });
   } catch (error) {
     console.error('Erro ao buscar informações da tabela Pagamentos:', error);
-    res.status(500).send({ message: 'Erro ao buscar informações da tabela Pagamentos' });
+    res.status(500).send({ 
+      message: 'Erro ao buscar informações da tabela Pagamentos',
+      error: error.message 
+    });
   }
 });
-
 
 // Rota para obter informações da tabela Receitas
 app.get(`/tablereceitas/:id`, verifyAcess, async (req, res) => {
