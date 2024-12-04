@@ -140,7 +140,7 @@ app.get('/caixa_entrada', verifyAcess, async (req, res) => {
     const Emails = await mainDb('mensagens')
       .where({ 'Destinatario': req.user.Email, 'destinatarioDelete': 0 })
       .select('*');
-      
+
     if (Emails.length > 0) {
       res.status(200).json(Emails);
       console.log(`E-mails enviados para ${req.user.Email}: `)
@@ -178,7 +178,7 @@ app.get('/caixa_saida', verifyAcess, async (req, res) => {
     const Emails = await mainDb('mensagens')
       .where({ 'Remetente': req.user.Email, 'remetenteDelete': 0 })
       .select('*');
-      
+
     if (Emails.length > 0) {
       res.status(200).json(Emails);
       console.log(`E-mails enviados por ${req.user.Email}: `)
@@ -198,13 +198,13 @@ app.put('/excluir_email_remetente', verifyAcess, async (req, res) => {
   const { id } = req.body;
 
   try {
-      await mainDb('mensagens')
-          .where('id', id)
-          .update('remetenteDelete', 1);
-      res.status(200).send('E-mail excluído com sucesso.');
+    await mainDb('mensagens')
+      .where('id', id)
+      .update('remetenteDelete', 1);
+    res.status(200).send('E-mail excluído com sucesso.');
   } catch (err) {
-      console.error('Erro ao excluir o e-mail', err);
-      res.status(500).send('Erro no servidor.');
+    console.error('Erro ao excluir o e-mail', err);
+    res.status(500).send('Erro no servidor.');
   }
 });
 
@@ -213,13 +213,13 @@ app.put('/excluir_email_destinatario', verifyAcess, async (req, res) => {
   const { id } = req.body;
 
   try {
-      await mainDb('mensagens')
-          .where('id', id)
-          .update('destinatarioDelete', 1);
-      res.status(200).send('E-mail excluído com sucesso.');
+    await mainDb('mensagens')
+      .where('id', id)
+      .update('destinatarioDelete', 1);
+    res.status(200).send('E-mail excluído com sucesso.');
   } catch (err) {
-      console.error('Erro ao excluir o e-mail', err);
-      res.status(500).send('Erro no servidor.');
+    console.error('Erro ao excluir o e-mail', err);
+    res.status(500).send('Erro no servidor.');
   }
 });
 
@@ -233,7 +233,7 @@ app.get('/SelectInfoEmpresa/:id', verifyAcess, async (req, res) => {
   if (req.user.TypeUser !== "SuperAdmin") {
     return res.status(403).json('403: Acesso inautorizado');
   }
-  
+
   try {
     const SelectInfo = await mainDb('cadastro_empresarial').where({ id: parseInt(id) });
 
@@ -278,7 +278,7 @@ app.get('/tableEmpresas', verifyAcess, async (req, res) => {
   try {
     const project_CNPJ_Registers = await mainDb('cadastro_empresarial').select();
 
-    console.log(project_CNPJ_Registers.length ,"empesa(s) encontrada(s)");
+    console.log(project_CNPJ_Registers.length, "empesa(s) encontrada(s)");
     res.status(200).json({ InfoTabela: project_CNPJ_Registers, user: req.user }); // Envia os dados da tabela e o usuário
   } catch (err) {
     console.log('Erro ao carregar tabela', err);
@@ -292,7 +292,7 @@ app.get('/tableEmpresas', verifyAcess, async (req, res) => {
 app.get(`/tableEstoque/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -310,7 +310,7 @@ app.get(`/tableEstoque/:id`, verifyAcess, async (req, res) => {
 app.get(`/tableVenda/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -328,7 +328,7 @@ app.get(`/tableVenda/:id`, verifyAcess, async (req, res) => {
 app.get('/VendasEmAberto/:id', verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda', "Caixa"].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda', "Caixa"].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -352,7 +352,7 @@ app.get('/VendasEmAberto/:id', verifyAcess, async (req, res) => {
 app.get('/PedidosCancelados/:id', verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -375,7 +375,7 @@ app.get('/PedidosCancelados/:id', verifyAcess, async (req, res) => {
 app.get('/VendasConcluidas/:id', verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -402,7 +402,7 @@ app.get(`/tablepagamentos`, verifyAcess, async (req, res) => {
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${req.user.id_EmpresaDb}`);
-    
+
     // Possível ordenação por data mais recente
     const pagamentoInfo = await knexInstance('pagamentos')
       .select('*')
@@ -414,15 +414,15 @@ app.get(`/tablepagamentos`, verifyAcess, async (req, res) => {
       Valor: parseFloat(pagamento.Valor).toFixed(2)  // Garante duas casas decimais
     }));
 
-    res.status(200).send({ 
+    res.status(200).send({
       InfoTabela: formattedPagamentos,
       total: formattedPagamentos.length  // Adiciona contagem total de pagamentos
     });
   } catch (error) {
     console.error('Erro ao buscar informações da tabela Pagamentos:', error);
-    res.status(500).send({ 
+    res.status(500).send({
       message: 'Erro ao buscar informações da tabela Pagamentos',
-      error: error.message 
+      error: error.message
     });
   }
 });
@@ -431,7 +431,7 @@ app.get(`/tablepagamentos`, verifyAcess, async (req, res) => {
 app.get(`/tablereceitas/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda', 'Caixa'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda', 'Caixa'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -449,7 +449,7 @@ app.get(`/tablereceitas/:id`, verifyAcess, async (req, res) => {
 app.get(`/tabledespesas/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda', 'Caixa'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda', 'Caixa'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -467,7 +467,7 @@ app.get(`/tabledespesas/:id`, verifyAcess, async (req, res) => {
 app.get(`/tableCliente/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -486,7 +486,7 @@ app.get(`/SelectedCliente/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params;
   const { razao_social } = req.query; // Mudamos para `razao_social`
 
-  if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda', 'Caixa'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -507,7 +507,7 @@ app.get(`/SelectedCliente/:id`, verifyAcess, async (req, res) => {
 app.get(`/tableFornecedor/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -524,7 +524,7 @@ app.get(`/tableFornecedor/:id`, verifyAcess, async (req, res) => {
 app.get('/tableFuncionario/:id', verifyAcess, async (req, res) => {
   const { id } = req.params;
 
-    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -542,7 +542,7 @@ app.get('/tableFuncionario/:id', verifyAcess, async (req, res) => {
 app.get(`/tableImpostos/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -561,7 +561,7 @@ app.get(`/tableImpostos/:id`, verifyAcess, async (req, res) => {
 app.get(`/tablePlanos/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
 
-    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -579,20 +579,20 @@ app.get(`/tablePlanos/:id`, verifyAcess, async (req, res) => {
 app.get(`/tableContas/:id/:plano/:orientacao`, verifyAcess, async (req, res) => {
   const { id, plano, orientacao } = req.params; // Obtendo o ID da empresa, plano e a orientação da rota
 
-    if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Estoque', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
   try {
     const knexInstance = createEmpresaKnexConnection(`empresa_${id}`);
-    
+
     // Consultando a tabela de contas com base na orientação e no plano
     const response = await knexInstance('contas')
       .select('*')
       .where('plano', plano) // Filtrando pelo plano
-      .andWhere(function() {
+      .andWhere(function () {
         this.where('orientacao', orientacao)
-            .orWhere('orientacao', 'Ambos');
+          .orWhere('orientacao', 'Ambos');
       });
 
     res.status(200).send(response);
@@ -606,7 +606,7 @@ app.get(`/tableContas/:id/:plano/:orientacao`, verifyAcess, async (req, res) => 
 
 app.get('/autorizar/:id', verifyAcess, async (req, res) => {
   const { id } = req.params;
-  const {id_user, Nome_user} = req.body
+  const { id_user, Nome_user } = req.body
 
   if (req.user.TypeUser != "SuperAdmin") {
     return res.status(403).json('403: Acesso inautorizado')
@@ -651,7 +651,7 @@ app.get('/autorizar/:id', verifyAcess, async (req, res) => {
 
 app.get('/desautorizar/:id', verifyAcess, async (req, res) => {
   const { id } = req.params;
-  const {id_user, Nome_user} = req.body
+  const { id_user, Nome_user } = req.body
 
   if (req.user.TypeUser != "SuperAdmin") {
     return res.status(403).json('403: Acesso inautorizado')
@@ -696,7 +696,7 @@ app.put(`/tableCliente/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
   const { Nome, CPF_CNPJ, Enderecoid } = req.body;
 
-    if (!['Gestor', 'Socio', 'Gerente', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -719,7 +719,7 @@ app.put(`/tableFornecedorRegistro/:id`, verifyAcess, async (req, res) => {
   const { id } = req.params; // Obtendo o ID da empresa da rota
   const { Nome, CNPJ, Enderecoid } = req.body;
 
-    if (!['Gestor', 'Socio', 'Gerente', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Financeiro', 'Venda'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -742,9 +742,9 @@ app.put(`/tableFornecedorRegistro/:id`, verifyAcess, async (req, res) => {
 // Mudar o estado finalizado para 1
 app.put('/tableDespesasFinalizado/:id', verifyAcess, async (req, res) => {
   const { id } = req.params;
-  const {id_EmpresaDb} = req.body
+  const { id_EmpresaDb } = req.body
 
-    if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -764,9 +764,9 @@ app.put('/tableDespesasFinalizado/:id', verifyAcess, async (req, res) => {
 // Mudar o estado finalizado para 1
 app.put('/tableDespesasNaoFinalizado/:id', verifyAcess, async (req, res) => {
   const { id } = req.params;
-  const {id_EmpresaDb} = req.body
+  const { id_EmpresaDb } = req.body
 
-    if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Financeiro'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -793,10 +793,10 @@ const storage = multer.diskStorage({
     const timestamp = Date.now();  // Pega o timestamp atual
     const originalName = file.originalname.replace(/\s+/g, '_');  // Remove espaços do nome original
     const fileExtension = path.extname(originalName);  // Extensão do arquivo original
-    
+
     // Definir o novo nome do arquivo como "timestamp_nomeoriginal.ext"
     const newFileName = `${timestamp}_${path.basename(originalName, fileExtension)}${fileExtension}`;
-    
+
     cb(null, newFileName);  // Salva o arquivo no servidor com o nome gerado
   }
 });
@@ -806,7 +806,7 @@ const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif/;
   const extName = allowedTypes.test(path.extname(file.originalname).toLowerCase());
   const mimeType = allowedTypes.test(file.mimetype);
-  
+
   if (extName && mimeType) {
     cb(null, true);
   } else {
@@ -823,7 +823,7 @@ const upload = multer({
 // ESTOQUE
 app.put('/updateProduct/:id', upload.single('Imagem'), verifyAcess, async (req, res) => {
 
-    if (!['Gestor', 'Socio', 'Gerente', 'Estoque'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Estoque'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
@@ -847,9 +847,9 @@ app.put('/updateProduct/:id', upload.single('Imagem'), verifyAcess, async (req, 
     };
 
     // Atualiza a imagem somente se houver uma nova imagem enviada
-if (req.file) {
-  updatedData.Imagem = req.file.filename;  // Salva apenas o nome do arquivo no banco de dados
-}
+    if (req.file) {
+      updatedData.Imagem = req.file.filename;  // Salva apenas o nome do arquivo no banco de dados
+    }
 
     const knexInstance = createEmpresaKnexConnection(`empresa_${database_id}`);
 
@@ -858,7 +858,7 @@ if (req.file) {
       .where({ Codigo: id })
       .update(updatedData);
 
-      await logActionEmpresa(database_id, userId, userName, `Atualizou um produto com o código ${id}`, `empresa_${database_id}.estoque`)
+    await logActionEmpresa(database_id, userId, userName, `Atualizou um produto com o código ${id}`, `empresa_${database_id}.estoque`)
 
     return res.status(200).json({ message: 'Produto atualizado com sucesso!' });
   } catch (error) {

@@ -1512,7 +1512,7 @@ app.get('/EmpresaHistoricLogs', verifyAcess, async (req, res) => {
   const { page = 1, limit = 12, year, month } = req.query;
   const offset = (page - 1) * limit;
 
-  if (!['Gestor', 'Socio', 'Gerente'].includes(req.user.TypeUser)) {
+  if (!['Gestor', 'Socio', 'Gerente', 'Financeiro'].includes(req.user.TypeUser)) {
     return res.status(403).json('403: Acesso inautorizado');
   }
 
